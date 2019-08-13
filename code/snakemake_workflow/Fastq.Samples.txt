@@ -1,0 +1,34 @@
+Sample	SRA	R1	R2
+NA19201_argonne	SRR031828		
+NA19160_argonne	SRR031910		
+NA18913_argonne	SRR031892		
+NA19138_argonne	SRR031905		
+NA18862_argonne	SRR031890		
+NA19201_30min	SRR2937289		
+NA19201_60min	SRR2937291		
+NA18913_30min	SRR2937119		
+NA18913_60min	SRR2937125		
+NA19138_30min	SRR2937221		
+NA19138_60min	SRR2937223		
+19201_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-11_S1_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-11_S1_L007_R2_001.fastq.gz
+19201_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-11_S1_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-11_S1_L008_R2_001.fastq.gz
+19201_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-12_S2_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-12_S2_L007_R2_001.fastq.gz
+19201_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-12_S2_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-12_S2_L008_R2_001.fastq.gz
+19160_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-31_S3_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-31_S3_L007_R2_001.fastq.gz
+19160_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-31_S3_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-31_S3_L008_R2_001.fastq.gz
+19160_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-32_S4_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-32_S4_L007_R2_001.fastq.gz
+19160_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-32_S4_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-32_S4_L008_R2_001.fastq.gz
+18862_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-51_S5_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-51_S5_L007_R2_001.fastq.gz
+18862_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-51_S5_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-51_S5_L008_R2_001.fastq.gz
+18862_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-52_S6_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-52_S6_L007_R2_001.fastq.gz
+18862_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-52_S6_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-52_S6_L008_R2_001.fastq.gz
+18913_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-61_S7_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-61_S7_L007_R2_001.fastq.gz
+18913_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-61_S7_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-61_S7_L008_R2_001.fastq.gz
+18913_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-62_S8_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-62_S8_L007_R2_001.fastq.gz
+18913_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-62_S8_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-62_S8_L008_R2_001.fastq.gz
+19138_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-71_S9_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-71_S9_L007_R2_001.fastq.gz
+19138_cheRNA_1		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-71_S9_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-71_S9_L008_R2_001.fastq.gz
+19138_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-72_S10_L007_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-72_S10_L007_R2_001.fastq.gz
+19138_cheRNA_2		/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-72_S10_L008_R1_001.fastq.gz	/project2/yangili1/nascent-seq_LCL/FastQ/FastQ/JS-YZ-10S-N-72_S10_L008_R2_001.fastq.gz
+SNE_1	SRR1824492		
+CPE_1	SRR1824495		
