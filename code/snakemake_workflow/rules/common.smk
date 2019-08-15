@@ -5,7 +5,13 @@ import os
 configfile: "config.yaml"
 
 samples = pd.read_csv(config["samples"],sep='\t', index_col=0)
+FastQList = pd.read_csv(config["FastQList"],sep='\t')
 
+SRA_fastq_for_download = expand("SRA_Fastq/{SRA_Accension}.fastq.gz", SRA_Accension=[x for x in FastQList["SRA"].tolist() if str(x) != 'nan'])
+
+# print( expand("SRA_Fastq/{SRA_Accension}.fastq.gz", SRA_Accension=[x for x in FastQList.loc[FastQList['Sample'] == "19201_cheRNA_1"]["R1"].tolist() if str(x) != 'nan'] ))
+
+SampleList = set(FastQList['Sample'])
 # # How to access values in samples.tsv
 
 # print(samples)
