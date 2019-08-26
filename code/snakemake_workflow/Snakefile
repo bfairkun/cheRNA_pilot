@@ -12,7 +12,11 @@ rule all:
         # SRA_fastq_for_download,
         # expand("Sample_Fastq/{sample}.fastq.gz", sample=SampleList),
         # expand( "Alignments/SecondPass/{sample}/SJ.out.annotated.tab", sample=SampleList),
-        expand(config["gitinclude_output"] + "SJoutAnnotatedAndIntersected/{sample}.tab.gz", sample=SampleList)
+        expand( "Alignments/SecondPass/{sample}/Unstranded.bw", sample=SampleList),
+        expand(config["gitinclude_output"] + "SJoutAnnotatedAndIntersected/{sample}.tab.gz", sample=SampleList),
+        expand("UnstrandedBigwigs/{sample}.bw", sample=SampleList),
+        # "Misc/computeMatrix.gz",
+        # "leafcutter/leafcutter_perind.counts.gz"
 
 include: "rules/other.smk"
 include: "rules/DownloadAndMergeFastq.smk"

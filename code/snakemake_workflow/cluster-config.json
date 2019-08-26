@@ -11,6 +11,9 @@
   "STAR_alignment_FirstPass":
   {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10},
 
+  "computeMatrix_metatranscript":
+  {"mem" : 10000, "tasks-per-node" : 3},
+
   "STAR_alignment_SecondPass":
   {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10}
 

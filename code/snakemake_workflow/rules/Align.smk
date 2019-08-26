@@ -77,10 +77,11 @@ rule AnnotateSplicingTypes:
         SJout = "Alignments/SecondPass/{sample}/SJ.out.tab",
         AnnotatedIntrons = "Misc/GencodeHg38_all_introns.corrected.bed"
     output:
+        SJOutASBed = "Alignments/JunctionBeds/{sample}.junc",
         SJout_AS_annotated = "Alignments/SecondPass/{sample}/SJ.out.annotated.tab"
     shell:
         """
-        awk -F'\\t' -v OFS='\\t' '$4=="2" {{print $1,$2-1,$3,".",$7,"-"}} $4=="1" {{print $1,$2-1,$3,".",$7,"+"}}' {input.SJout} | scripts/AnnotateSplicingType.py -I - -A {input.AnnotatedIntrons} -O {output}
+        awk -F'\\t' -v OFS='\\t' '$4=="2" {{print $1,$2-1,$3,".",$7,"-"}} $4=="1" {{print $1,$2-1,$3,".",$7,"+"}}' {input.SJout} | tee {output.SJOutASBed} | scripts/AnnotateSplicingType.py -I - -A {input.AnnotatedIntrons} -O {output.SJout_AS_annotated}
         """
 
 rule IntersectIntronsWithGenes:
@@ -93,6 +94,70 @@ rule IntersectIntronsWithGenes:
         """
         bedtools intersect -a {input.SJout_AS_annotated} -b {input.Genes} -wao -s | gzip - > {output}
         """
+
+rule faidx:
+    input: config["Human_ref"]["genome_fasta"]
+    output: config["Human_ref"]["genome_fasta"] + ".fai"
+    shell: "samtools faidx {input}"
+
+rule BedgraphAndBigwigs:
+    input:
+        bam = "Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam",
+        fai =config["Human_ref"]["genome_fasta"] + ".fai"
+    output:
+        PlusBg = "Alignments/SecondPass/{sample}/Plus.bg",
+        MinusBg = "Alignments/SecondPass/{sample}/Minus.bg",
+        UnstrandBg = "Alignments/SecondPass/{sample}/Unstranded.bg",
+        PlusBw = "Alignments/SecondPass/{sample}/Plus.bw",
+        MinusBw = "Alignments/SecondPass/{sample}/Minus.bw",
+        UnstrandBw = "Alignments/SecondPass/{sample}/Unstranded.bw",
+    shell:
+        """
+        bedtools genomecov -max 10000 -ibam {input.bam} -bg -strand + -split -scale $(bc <<< "scale=6;1000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.PlusBg}
+        bedtools genomecov -max 10000 -ibam {input.bam} -bg -strand - -split -scale $(bc <<< "scale=6;1000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.MinusBg}
+        bedtools genomecov -max 10000 -ibam {input.bam} -bg -split -scale $(bc <<< "scale=6;1000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.UnstrandBg}
+        bedGraphToBigWig {output.PlusBg} {input.fai} {output.PlusBw}
+        bedGraphToBigWig {output.MinusBg} {input.fai} {output.MinusBw}
+        bedGraphToBigWig {output.UnstrandBg} {input.fai} {output.UnstrandBw}
+        """
+
+
+
+rule leacutter_cluster:
+    input:
+        expand("Alignments/JunctionBeds/{sample}.junc", sample=SampleList)
+    output:
+        juncfilelist = "leafcutter/junctionfiles.txt",
+        counts = "leafcutter/leafcutter_perind.counts.gz",
+        numers = "leafcutter/leafcutter_perind_numers.counts.gz"
+    log:
+    shell:
+        """
+        echo {input} | tr " " '\\n' > {output.juncfilelist}
+        leafcutter_cluster.py -s True -j {output.juncfilelist} -r leafcutter/
+        """
+
+rule computeMatrix_metatranscript:
+    input:
+        UnstrandBw = expand("Alignments/SecondPass/{sample}/Unstranded.bw", sample=["Sultan_rRNADeplete_Total", "Sultan_polyA_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic", "19201_cheRNA_1", "NA19201_argonne"]),
+        gtf=config["Human_ref"]["genome_gtf"],
+    output:
+        "Misc/computeMatrix.gz"
+    threads: 2
+    log:
+        "logs/computeMatrix.log"
+    shell:
+        """
+        computeMatrix scale-regions -S {input.UnstrandBw} -R {input.gtf} -a 1000 -b 1000 --metagene --missingDataAsZero -o {output} -p {threads} &> {log}
+        """
+
+rule copyBigwigs:
+    input:
+        UnstrandBw = "Alignments/SecondPass/{sample}/Unstranded.bw",
+    output:
+        UnstrandedBigwigs="UnstrandedBigwigs/{sample}.bw"
+    shell:
+        "cp {input} {output}"
 
 # SedReplace = ("Alignments/SecondPass/").replace("/", 
 # "\/")
