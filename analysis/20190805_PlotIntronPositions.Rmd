@@ -1,0 +1,130 @@
+---
+title: "20190805_PlotIntronPositions"
+author: "Ben Fair"
+date: "8/15/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+
+files <- list.files(path="../output/SJoutAnnotatedAndIntersected", pattern="*.tab.gz", full.names=TRUE, recursive=FALSE)
+SampleName<-gsub("../output/SJoutAnnotatedAndIntersected/(.+).tab.gz", "\\1", files, perl=T)
+SampleName
+
+MergedData <- data.frame()
+for (i in seq_along(files)){
+    CurrentDataset <- read.table(files[i], sep='\t', col.names=c("chr", "start", "stop", "name", "score", "strand", "ASType", "geneChr", "geneStart", "geneStop", "gene", "geneScore", "geneStrand", "Overlap")) %>%
+      select(ASType, start, stop, geneChr, geneStart, geneStop, score, strand) %>%
+      mutate(samplename=SampleName[i]) %>%
+      filter(geneChr != ".") %>%
+      mutate(Rel5SplicePos = case_when(
+        strand=="+" ~ ((start-geneStart)/(geneStop-geneStart)),
+        strand=="-" ~ ((geneStop-stop)/(geneStop-geneStart))
+      )) %>%
+      mutate(Rel3SplicePos = case_when(
+        strand=="+" ~ ((stop-geneStart)/(geneStop-geneStart)),
+        strand=="-" ~ ((geneStop-start)/(geneStop-geneStart))
+      )) %>%
+      filter(Rel5SplicePos<=1 & Rel5SplicePos>=0) %>%
+      filter(Rel3SplicePos<=1 & Rel3SplicePos>=0)
+    MergedData<-rbind(MergedData,CurrentDataset)
+}
+
+SamplesToPlot <- c("Sultan_polyA_Total", "Sultan_rRNADeplete_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic", "18862_cheRNA_1","NA18862_argonne", "19201_cheRNA_1", "18913_cheRNA_2")
+
+MergedData %>%
+  group_by(samplename, ASType) %>%
+  summarise(a_sum=sum(score)) %>%
+  group_by(samplename) %>%
+  mutate(FractionSpliceType = a_sum/sum(a_sum)*100) %>%
+  filter(ASType!="AnnotatedSpliceSite") %>%
+  ggplot(aes(x = samplename, y = FractionSpliceType, fill = ASType)) +
+  geom_col() +
+  ylab("Percent unannotated splicing") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+#Where are called splice sites
+MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  filter(ASType!="AnnotatedSpliceSite") %>%
+  filter(score>0) %>%
+ggplot(aes(x=Rel3SplicePos, color=samplename)) +
+  geom_density(adjust=2, size=1) +
+  xlab("Relative position of unannotated splice site") +
+  theme_bw()
+
+#Same, but weighted by RPM for junction, filtering out extreme outliers (>10 counts)
+MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  filter(ASType!="AnnotatedSpliceSite") %>%
+  filter(score>0) %>%
+  filter(score<10) %>%
+  group_by(samplename) %>%
+  mutate(a_sum=sum(score)) %>%
+  ungroup() %>%
+ggplot(aes(x=Rel5SplicePos, color=samplename)) +
+  geom_density(adjust=2, aes(weight=score/a_sum)) +
+  theme_bw()
+
+# MergedData %>%
+#   filter(samplename %in% SamplesToPlot) %>%
+#   filter(ASType!="AnnotatedSpliceSite") %>%
+#   filter(score>0) %>%
+#   group_by(samplename) %>%
+#   mutate(a_sum=sum(score)) %>%
+#   mutate(frac=score/a_sum)%>%
+#   summarise(max=max(frac))
+
+
+```
+
+Ok, so nuclear (and chromatin associated) fractions have more unannotated splicing by a factor of about 1.5X to 2X, and of those unannotated splice sites seem very slightly biased towards the 5' end of genes.
+
+As a control, I should make the same metaplots for annotated splice sites
+
+```{r}
+#Where are splice events
+MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  filter(ASType=="AnnotatedSpliceSite") %>%
+  filter(score>0) %>%
+  ggplot(aes(x=Rel3SplicePos, color=samplename)) +
+    geom_density(adjust=2, size=1) +
+    xlab("Relative position of annotated splice site") +
+    theme_bw()
+
+#Same but weighted by junction RPM
+ToPlot <- MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  filter(ASType=="AnnotatedSpliceSite") %>%
+  filter(score>0) %>%
+  filter(score<500) %>%
+  group_by(samplename) %>%
+  mutate(a_sum=sum(score)) %>%
+  ungroup()
+ggplot(ToPlot, aes(x=Rel3SplicePos, color=samplename)) +
+  geom_density(adjust=2, size=1, aes(weight=score/a_sum)) +
+  theme_bw()
+
+MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  filter(ASType=="AnnotatedSpliceSite") %>%
+  filter(score>0) %>%
+ggplot(aes(x=log10(score), color=samplename)) +
+  geom_density() +
+  theme_bw()
+
+```
+
+Ok, good. So the 5' enrichment for splice sites in chromatin-associated RNAs is true for unannotated splice sites but not for annotated splice sites. 
