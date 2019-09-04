@@ -15,6 +15,22 @@ rule STAR_make_index_human:
         STAR --runMode genomeGenerate --genomeSAsparseD 2 --runThreadN 4 --genomeDir {params.genomeDir} --sjdbGTFfile {input.gtf} --genomeFastaFiles {input.fasta} &> {log}
         """
 
+rule hisat2_make_index:
+    input:
+        fasta=config["Human_ref"]["genome_fasta"]
+    output:
+        index = config["Human_ref"]["genome_dir_hisat"] + "genome.1.ht2",
+    log:
+        "logs/hisat2_make_index.log"
+    params:
+        index_prefix = config["Human_ref"]["genome_dir_hisat"] + "genome",
+    threads: 4
+    shell:
+        """
+        hisat2-build -p {threads} {input} {params.index_prefix} &> {log}
+        """
+
+
 rule STAR_alignment_FirstPass:
     input:
         index_human = config["Human_ref"]["genome_dir"] + "chrLength.txt",
@@ -45,6 +61,28 @@ rule STAR_make_index_human_AfterFirstPass:
         """
         STAR --runMode genomeGenerate --genomeSAsparseD 2 --runThreadN 4 --genomeDir Alignments/FirstPass_sjdb_index/ --sjdbGTFfile {input.gtf} --genomeFastaFiles {input.fasta} --sjdbFileChrStartEnd {input.FirstPass_sjdb} &> {log}
         """
+
+rule STAR_alignment_SecondPass_PE:
+    input:
+        index = "Alignments/FirstPass_sjdb_index/chrLength.txt",
+        R1 = "Sample_Fastq_PE/{sample}.R1.fastq.gz",
+        R2 = "Sample_Fastq_PE/{sample}.R2.fastq.gz"
+    log:
+        "logs/STAR_SecondPass_PE/{sample}.log"
+    threads: 8
+    output:
+        SJout = "Alignments/SecondPass_PE/{sample}/SJ.out.tab",
+        bam = "Alignments/SecondPass_PE/{sample}/Aligned.sortedByCoord.out.bam",
+        bai =  "Alignments/SecondPass_PE/{sample}/Aligned.sortedByCoord.out.bam.bai",
+        R1Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate1",
+        R2Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate2"
+    shell:
+        """
+        ulimit -v 31538428657
+        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn {input.R1} {input.R2} --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix Alignments/SecondPass_PE/{wildcards.sample}/ --outReadsUnmapped Fastx &> {log}
+        samtools index {output.bam}
+        """
+
 
 rule STAR_alignment_SecondPass:
     input:
@@ -137,9 +175,10 @@ rule leacutter_cluster:
         leafcutter_cluster.py -s True -j {output.juncfilelist} -r leafcutter/
         """
 
+samplesForMetaPlots=["Sultan_rRNADeplete_Total", "Sultan_polyA_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic", "19201_cheRNA_1", "NA19201_argonne"]
 rule computeMatrix_metatranscript:
     input:
-        UnstrandBw = expand("Alignments/SecondPass/{sample}/Unstranded.bw", sample=["Sultan_rRNADeplete_Total", "Sultan_polyA_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic", "19201_cheRNA_1", "NA19201_argonne"]),
+        UnstrandBw = expand("UnstrandedBigwigs/{sample}.bw", sample=samplesForMetaPlots),
         gtf=config["Human_ref"]["genome_gtf"],
     output:
         "Misc/computeMatrix.gz"
@@ -151,6 +190,20 @@ rule computeMatrix_metatranscript:
         computeMatrix scale-regions -S {input.UnstrandBw} -R {input.gtf} -a 1000 -b 1000 --metagene --missingDataAsZero -o {output} -p {threads} &> {log}
         """
 
+rule computeMatrix_introns:
+    input:
+        UnstrandBw = expand("Alignments/SecondPass/{sample}/Unstranded.bw", sample=samplesForMetaPlots),
+        regions="Misc/GencodeHg38_all_introns.corrected.bed"
+    output:
+        "Misc/computeMatrix.introns.gz"
+    threads: 2
+    log:
+        "logs/computeMatrix_introns.log"
+    shell:
+        """
+        computeMatrix scale-regions -S {input.UnstrandBw} -R {input.regions} --missingDataAsZero -o {output} -p {threads} &> {log}
+        """
+
 rule copyBigwigs:
     input:
         UnstrandBw = "Alignments/SecondPass/{sample}/Unstranded.bw",
@@ -158,6 +211,32 @@ rule copyBigwigs:
         UnstrandedBigwigs="UnstrandedBigwigs/{sample}.bw"
     shell:
         "cp {input} {output}"
+
+rule MakeTopHatJuncBedFiles:
+    input:
+        SJ = "Alignments/SecondPass/{sample}/SJ.out.tab",
+    output:
+        bed = "Junctions/{sample}.junctions.bed.gz",
+    log:
+        "logs/MakeTopHatJuncBedFiles/{sample}.log"
+    shell:
+        """
+        bash scripts/SJ_to_junctions.sh {input.SJ} Junctions/{wildcards.sample}.junctions.bed
+        gzip Junctions/{wildcards.sample}.junctions.bed
+        """
+
+# rule TopHatJuncBedFilesToBigBed:
+#     input:
+#         bed = "Alignments/SecondPass/{sample}/SJ.out.junctions.bed",
+#         fai =config["Human_ref"]["genome_fasta"] + ".fai"
+#     output:
+#         Bigbed = "JunctionBigbeds/{sample}.bb"
+#     shell:
+#         """
+#         ucsc-bedtobigbed {input.bed} {input.fai} {output.Bigbed}
+#         """
+
+        
 
 # SedReplace = ("Alignments/SecondPass/").replace("/", 
 # "\/")

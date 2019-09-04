@@ -8,6 +8,9 @@
   "STAR_make_index_human_AfterFirstPass":
   {"mem" : 68000, "tasks-per-node" : 5, "partition" : "bigmem2"},
 
+  "hisat2_make_index":
+  {"mem" : 68000, "tasks-per-node" : 5, "partition" : "bigmem2"},
+
   "STAR_alignment_FirstPass":
   {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10},
 
@@ -15,7 +18,9 @@
   {"mem" : 10000, "tasks-per-node" : 3},
 
   "STAR_alignment_SecondPass":
-  {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10}
+  {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10},
 
+  "STAR_alignment_SecondPass_PE":
+  {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10}
 }
 

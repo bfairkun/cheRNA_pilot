@@ -11,4 +11,7 @@ Human_ref:
     genome_fasta: "/project2/gilad/bjf79/genomes/GRCh38_Ensembl/Sequence/Homo_sapiens.GRCh38.dna_sm.chromosome.all.fa"
     genome_gtf: "/project2/gilad/bjf79/genomes/GRCh38_Ensembl/Annotations/Homo_sapiens.GRCh38.94.chr.gtf"
     genome_dir: "/project2/gilad/bjf79/genomes/GRCh38_Ensembl/STAR_genomedir/"
+    genome_dir_hisat: "/project2/gilad/bjf79/genomes/GRCh38_Ensembl/Hisat2Index/"
 
+Misc:
+    hg19Tohg38Liftover: "/project2/gilad/bjf79/genomes/LiftoverChains/hg19ToHg38.over.chain.gz"

@@ -12,11 +12,17 @@ rule all:
         # SRA_fastq_for_download,
         # expand("Sample_Fastq/{sample}.fastq.gz", sample=SampleList),
         # expand( "Alignments/SecondPass/{sample}/SJ.out.annotated.tab", sample=SampleList),
+        config["Human_ref"]["genome_dir_hisat"] + "genome.1.ht2",
         expand( "Alignments/SecondPass/{sample}/Unstranded.bw", sample=SampleList),
         expand(config["gitinclude_output"] + "SJoutAnnotatedAndIntersected/{sample}.tab.gz", sample=SampleList),
         expand("UnstrandedBigwigs/{sample}.bw", sample=SampleList),
-        # "Misc/computeMatrix.gz",
+        expand("Junctions/{sample}.junctions.bed.gz", sample=SampleList),
+        expand("Alignments/SecondPass_PE/{sample}/Aligned.sortedByCoord.out.bam", sample=SampleList_PE),
+        "Misc/computeMatrix.gz",
+        # "Misc/computeMatrix.introns.gz",
+        "Misc/Gm12878.chromHMM.hg19.bed.gz",
         # "leafcutter/leafcutter_perind.counts.gz"
+        "../../data/Gm12878.chromHMM.hg38.bed.gz"
 
 include: "rules/other.smk"
 include: "rules/DownloadAndMergeFastq.smk"
