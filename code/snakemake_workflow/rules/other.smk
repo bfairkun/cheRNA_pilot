@@ -13,4 +13,4 @@ rule LiftOverChromHMM:
     output:
         OutputBed = "../../data/Gm12878.chromHMM.hg38.bed.gz"
     shell:
-        "liftOver {input.InputBedGz} {input.chain} /dev/stdout /dev/null > {output.OutputBed}"
+        "liftOver {input.InputBedGz} {input.chain} /dev/stdout /dev/null | gzip - > {output.OutputBed}"
