@@ -72,14 +72,15 @@ rule STAR_alignment_SecondPass_PE:
     threads: 8
     output:
         SJout = "Alignments/SecondPass_PE/{sample}/SJ.out.tab",
-        bam = "Alignments/SecondPass_PE/{sample}/Aligned.sortedByCoord.out.bam",
-        bai =  "Alignments/SecondPass_PE/{sample}/Aligned.sortedByCoord.out.bam.bai",
-        R1Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate1",
-        R2Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate2"
+        bam = "Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam",
+        bai =  "Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam.bai",
+        # R1Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate1.fastq.gz",
+        # R2Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate2.fastq.gz"
     shell:
         """
         ulimit -v 31538428657
-        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn {input.R1} {input.R2} --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix Alignments/SecondPass_PE/{wildcards.sample}/ --outReadsUnmapped Fastx &> {log}
+        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn {input.R1} {input.R2} --readFilesCommand zcat --outSAMtype BAM Unsorted --outFileNamePrefix Alignments/SecondPass_PE/{wildcards.sample}/ --outReadsUnmapped Fastx --alignEndsType EndToEnd &> {log}
+        samtools view -bh Alignments/SecondPass_PE/{wildcards.sample}/Aligned.out.bam > {output.bam}
         samtools index {output.bam}
         """
 
@@ -100,6 +101,20 @@ rule STAR_alignment_SecondPass:
         ulimit -v 31538428657
         STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn <(zcat {input.R1} | fastx_trimmer -l 46) --outSAMtype BAM SortedByCoordinate --outWigType wiggle --outFileNamePrefix Alignments/SecondPass/{wildcards.sample}/ &> {log}
         samtools index {output.bam}
+        """
+
+rule AlignLariatJunctions_PE:
+    input:
+        R1Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate1",
+        R2Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate2"
+    log:
+        "logs/AlignLariatJunctions_PE/{sample}.log"
+    output:
+    params:
+        index_prefix = config["Human_ref"]["genome_dir_hisat"] + "genome",
+    shell:
+        """
+        bash scripts/AlignLariatJunctions_SingleSample.sh {params.index_prefix} {output.}
         """
 
 rule unzip_AnnotatedSpliceBed:
@@ -158,8 +173,6 @@ rule BedgraphAndBigwigs:
         bedGraphToBigWig {output.MinusBg} {input.fai} {output.MinusBw}
         bedGraphToBigWig {output.UnstrandBg} {input.fai} {output.UnstrandBw}
         """
-
-
 
 rule leacutter_cluster:
     input:

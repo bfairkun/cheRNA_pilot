@@ -17,7 +17,7 @@ rule all:
         expand(config["gitinclude_output"] + "SJoutAnnotatedAndIntersected/{sample}.tab.gz", sample=SampleList),
         expand("UnstrandedBigwigs/{sample}.bw", sample=SampleList),
         expand("Junctions/{sample}.junctions.bed.gz", sample=SampleList),
-        expand("Alignments/SecondPass_PE/{sample}/Aligned.sortedByCoord.out.bam", sample=SampleList_PE),
+        expand("Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam", sample=SampleList_PE),
         "Misc/computeMatrix.gz",
         # "Misc/computeMatrix.introns.gz",
         "Misc/Gm12878.chromHMM.hg19.bed.gz",
