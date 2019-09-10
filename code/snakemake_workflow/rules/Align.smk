@@ -169,7 +169,7 @@ rule CountUpstreamAndDownstreamCoverage:
         faidx = config["Human_ref"]["genome_fasta"] + ".fai"
     shell:
         """
-        paste <(samtools view -bh -F256 {input.bam} | bedtools intersect -sorted -g {params.faidx} -a {input.upstream} -b - -c) <(samtools view -bh -F256 {input.bam} | bedtools intersect -sorted -g {params.faidx} -a {input.downstream} -b - -c) | awk -F'\\t' -v OFS='\\t' '{{ print $1,$2,$3,$4,$5,$6,$7,$14 }}' | gzip - > {output}
+        paste <(samtools view -bh -F256 {input.bam} | bedtools intersect -sorted -g {params.faidx} -a {input.upstream} -b - -c -split) <(samtools view -bh -F256 {input.bam} | bedtools intersect -sorted -g {params.faidx} -a {input.downstream} -b - -c -split) | awk -F'\\t' -v OFS='\\t' '{{ print $1,$2,$3,$4,$5,$6,$7,$14 }}' | gzip - > {output}
         """
 
 rule MoveUpstreamAndDownstreamCoverageToGitRepo:
