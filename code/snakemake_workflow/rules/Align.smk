@@ -72,8 +72,7 @@ rule STAR_alignment_SecondPass_PE:
     threads: 8
     output:
         SJout = "Alignments/SecondPass_PE/{sample}/SJ.out.tab",
-        bam = "Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam",
-        bai =  "Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam.bai",
+        bam = "Alignments/SecondPass_PE/{sample}/Aligned.out.bam",
         # R1Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate1.fastq.gz",
         # R2Unmapped = "Alignments/SecondPass_PE/{sample}/Unmapped.out.mate2.fastq.gz"
     shell:
@@ -83,6 +82,19 @@ rule STAR_alignment_SecondPass_PE:
         samtools view -bh Alignments/SecondPass_PE/{wildcards.sample}/Aligned.out.bam > {output.bam}
         samtools index {output.bam}
         """
+
+rule sortBam:
+    input:
+        "{Filepath}.bam"
+    output:
+        sortedbam = "{Filepath}.sorted.bam",
+        index = "{Filepath}.sorted.bam.bai"
+    shell:
+        """
+        samtools sort {input} > {output.sortedbam}
+        samtools index {output.sortedbam}
+        """
+
 
 
 rule STAR_alignment_SecondPass:
@@ -122,8 +134,50 @@ rule unzip_AnnotatedSpliceBed:
         "../../data/GencodeHg38_all_introns.corrected.bed.gz"
     output:
         "Misc/GencodeHg38_all_introns.corrected.bed"
+    params:
+        faidx = config["Human_ref"]["genome_fasta"] + ".fai"
     shell:
-        "zcat {input} > {output}"
+        "zcat {input} | bedtools sort -i - -faidx {params.faidx} > {output}"
+
+rule Make3ssUpstreamAndDownstreamWindows:
+    input:
+        "Misc/GencodeHg38_all_introns.corrected.bed"
+    output:
+        upstream = "Misc/GencodeHg38_all_introns.upstream3ssWindows.bed",
+        downstream = "Misc/GencodeHg38_all_introns.downstream3ssWindows.bed",
+    params:
+        faidx = config["Human_ref"]["genome_fasta"] + ".fai"
+    shell:
+        """
+        awk -F'\\t' -v OFS='\\t' '$6=="+" {{print $1,$3-25,$3,$1"."$3".+",".",$6}} $6=="-" {{print $1,$2,$2+25,$1"."$2".-",".",$6}}' Misc/GencodeHg38_all_introns.corrected.bed | sort | uniq | bedtools sort -i - -faidx {params.faidx} > {output.upstream}
+        bedtools shift -i {output.upstream} -p 25 -m -25 -g {params.faidx} | bedtools sort -i - -faidx {params.faidx} > {output.downstream}
+        """
+
+rule CountUpstreamAndDownstreamCoverage:
+    """
+    Output a bedfile with 7th column for coverage in window upstream of 3ss and
+    8th column as downstream coverage
+    """
+    input:
+        upstream = "Misc/GencodeHg38_all_introns.upstream3ssWindows.bed",
+        downstream = "Misc/GencodeHg38_all_introns.downstream3ssWindows.bed",
+        bam = "Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam",
+        bai =  "Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam.bai"
+    output:
+        "3ssCoverage/{sample}.bed.gz"
+    params:
+        faidx = config["Human_ref"]["genome_fasta"] + ".fai"
+    shell:
+        """
+        paste <(samtools view -bh -F256 {input.bam} | bedtools intersect -sorted -g {params.faidx} -a {input.upstream} -b - -c) <(samtools view -bh -F256 {input.bam} | bedtools intersect -sorted -g {params.faidx} -a {input.downstream} -b - -c) | awk -F'\\t' -v OFS='\\t' '{{ print $1,$2,$3,$4,$5,$6,$7,$14 }}' | gzip - > {output}
+        """
+
+rule MoveUpstreamAndDownstreamCoverageToGitRepo:
+    input:
+        "3ssCoverage/{sample}.bed.gz"
+    output:
+        config["gitinclude_output"] + "3ssCoverageBeds/{sample}.bed.gz"
+    shell: "cp {input} {output}"
 
 rule AnnotateSplicingTypes:
     input:
@@ -166,9 +220,9 @@ rule BedgraphAndBigwigs:
         UnstrandBw = "Alignments/SecondPass/{sample}/Unstranded.bw",
     shell:
         """
-        bedtools genomecov -max 10000 -ibam {input.bam} -bg -strand + -split -scale $(bc <<< "scale=6;1000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.PlusBg}
-        bedtools genomecov -max 10000 -ibam {input.bam} -bg -strand - -split -scale $(bc <<< "scale=6;1000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.MinusBg}
-        bedtools genomecov -max 10000 -ibam {input.bam} -bg -split -scale $(bc <<< "scale=6;1000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.UnstrandBg}
+        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -strand + -split -scale $(bc <<< "scale=6;1000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.PlusBg}
+        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -strand - -split -scale $(bc <<< "scale=6;1000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.MinusBg}
+        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -split -scale $(bc <<< "scale=6;1000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.UnstrandBg}
         bedGraphToBigWig {output.PlusBg} {input.fai} {output.PlusBw}
         bedGraphToBigWig {output.MinusBg} {input.fai} {output.MinusBw}
         bedGraphToBigWig {output.UnstrandBg} {input.fai} {output.UnstrandBw}
