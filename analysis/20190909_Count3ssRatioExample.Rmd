@@ -44,6 +44,7 @@ Annotated <- SpliceSitesCounted %>%
 
 table(Annotated$Type3ss)
 
+# Write out as bed file to visually inspect classifications in IGV to check for bugs
 Annotated %>%
   mutate(NewName=paste(Acceptor, Type3ss, sep=".")) %>%
   # mutate(NewStart = case_when(strand == "+" ~ stop-25,
@@ -55,7 +56,9 @@ Annotated %>%
   write.table("~/Temporary/3ssAnnotations.bed", quote=F, sep='\t', col.names=F, row.names = F)
 ```
 
-Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3'ss splice ratios to use for downstream analysis. Then do some plotting.
+Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3'ss splice ratios to use for downstream analysis. Then do some plotting. More precisely, I will plot Intron retenetion percent spliced in (Intron retention PSI) which will be $IntronRetentionPSI=\frac{UpstreamCoverage}{DownstreamCoverage + UpstreamCoverage}$.
+
+
 
 ```{r}
 Cutoff <- 50
@@ -70,17 +73,24 @@ ToPlot <- RS %>%
   mutate(nRS.ratio = upstream.y/(downstream.y+upstream.y)) %>%
   mutate(NormalizedRatio = nRS.ratio/RS.ratio)
 
+# Plot Intron retenetion PSI.
 ggplot(ToPlot, aes(color=Type3ss)) +
   stat_ecdf(aes(x=nRS.ratio, linetype="nascent-RNA"), geom = "step") +
   stat_ecdf(aes(x=RS.ratio, linetype="polyA-RNA"), geom = "step") +
   ylab('Cumulative fraction') +
   xlab("Intron retention PSI") +
   theme_bw()
+```
 
+Chromatin associated RNA has higher $Intron Retention PSI$ as expected. Alternative upstream introns also have $Intron Retention PSI$ as expected, since there should be less coverage downstream of those 3'ss for cassette exons. Now quantify cotrnanscriptional splicing with a metric defined as $\frac{Intron retention PSI_{nascent}}{Intron retention PSI_{polyA}}$.
+
+```{r}
+# Plot cotranscriptional splicing
 ggplot(ToPlot, aes(x=NormalizedRatio, color=Type3ss)) +
   stat_ecdf(geom = "step") +
   ylab('Cumulative fraction') +
   xlab("Cotranscriptional splicing ratio") +
+  scale_x_continuous(trans='log10') +
   theme_bw()
 
 ToTest <- ToPlot %>%
@@ -89,3 +99,6 @@ wilcox.test(NormalizedRatio ~ Type3ss, data=ToTest)
 
 ```
 
+As expected from [Herzel et al](https://www.ncbi.nlm.nih.gov/pubmed/25929182), 3'ss downstream of cassette exons (which are an intron-centric measure of splicing of the upstream cassette exon) are spliced slower than constitutive introns.
+
+Next I should see how replicates compare, to see if this statistic is reasonably stable (eventually I could consider QTL mapping using this statistic).
