@@ -1,0 +1,91 @@
+---
+title: "20190909_Count3ssRatioExample"
+author: "Ben Fair"
+date: "9/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+library(tidyverse)
+```
+
+For each 3'ss, I used bedtools to count the number of reads overlapping the upstream 25bp window, and the downstream 25bp window. The ratio of these of these two counts is a measure of splicing efficiency, and the ratio of those ratios in nascent RNA-seq versus standard RNA-seq is a measure of how contranscriptional a splicing event is (see [Herzel et al](https://www.ncbi.nlm.nih.gov/pubmed/25929182)). Here I will look at these metrics using a standard RNA-seq dataset and nascent RNA-seq dataset from the same LCL line 18862.
+
+I have already calculated counts in upstream and downstream windows for each annotated 3'ss using bedtools (see Snakemake code). Here I will investigate the results with a few plots. One  result I expect to see is that alernative 3'ss will be spliced less contranscripionally. In the case of cassette exons, it is important to distinguish between the upstream 3'ss and the downstream 3'ss.
+
+First read in Gencode annotated introns, and classif the 3'ss as alternative or constitutive.
+
+```{r Annotate3ssAsConstitutiveOrAlternative}
+GencodeIntrons <- read.table("../data/GencodeHg38_all_introns.corrected.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'gene', 'intronNumber', 'transcriptType'))
+
+SpliceSitesCounted <- GencodeIntrons %>%
+  filter(transcriptType=="protein_coding") %>%
+  distinct(chrom, start, stop, .keep_all = T) %>%
+  mutate(Acceptor = case_when(strand == "+" ~ paste(chrom, stop, strand, sep="."),
+                              strand == "-" ~ paste(chrom, start, strand, sep="."))) %>%
+  mutate(Donor = case_when(strand == "+" ~ paste(chrom, start, strand, sep="."),
+                           strand == "-" ~ paste(chrom, stop, strand, sep="."))) %>%
+  add_count(Acceptor, name="AcceptorCount") %>%
+  add_count(Donor, name="DonorCount")
+
+Annotated <- SpliceSitesCounted %>%
+  # filter(AcceptorCount==1 & DonorCount==1) %>% dim()
+  group_by(Acceptor) %>%
+  mutate(DonorMax=max(DonorCount)) %>%
+  ungroup() %>%
+  distinct(Acceptor, .keep_all = T) %>%
+  mutate(Type3ss = case_when(AcceptorCount == 1 & DonorMax==1 ~ "Constitutive intron",
+                             AcceptorCount >1 & DonorMax==1 ~ "Downstream alternative intron",
+                             DonorMax > 1 ~ "Upstream alternative intron"))
+
+table(Annotated$Type3ss)
+
+Annotated %>%
+  mutate(NewName=paste(Acceptor, Type3ss, sep=".")) %>%
+  # mutate(NewStart = case_when(strand == "+" ~ stop-25,
+  #                             strand == "-" ~ start)) %>%
+  # mutate(NewStop = case_when(strand == "+" ~ stop,
+  #                          strand == "-" ~ start-25)) %>%
+  # select(chrom, NewStart, NewStop, paste(Acceptor, Type3ss), ".", strand) %>% head()
+  select(chrom, start, stop, NewName, score, strand) %>%
+  write.table("~/Temporary/3ssAnnotations.bed", quote=F, sep='\t', col.names=F, row.names = F)
+```
+
+Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3'ss splice ratios to use for downstream analysis. Then do some plotting.
+
+```{r}
+Cutoff <- 50
+
+RS <- read.table("../output/3ssCoverageBeds/NA18862_argonne.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'upstream', 'downstream'), stringsAsFactors = F) %>% filter(upstream + downstream >= Cutoff)
+nRS <- read.table("../output/3ssCoverageBeds/18862_cheRNA_1.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'upstream', 'downstream'), stringsAsFactors = F) %>% filter(upstream + downstream >= Cutoff)
+
+ToPlot <- RS %>%
+  left_join(nRS, by="name") %>%
+  inner_join(Annotated, by=c("name" = "Acceptor"))%>%
+  mutate(RS.ratio = upstream.x/(downstream.x+upstream.x)) %>%
+  mutate(nRS.ratio = upstream.y/(downstream.y+upstream.y)) %>%
+  mutate(NormalizedRatio = nRS.ratio/RS.ratio)
+
+ggplot(ToPlot, aes(color=Type3ss)) +
+  stat_ecdf(aes(x=nRS.ratio, linetype="nascent-RNA"), geom = "step") +
+  stat_ecdf(aes(x=RS.ratio, linetype="polyA-RNA"), geom = "step") +
+  ylab('Cumulative fraction') +
+  xlab("Intron retention PSI") +
+  theme_bw()
+
+ggplot(ToPlot, aes(x=NormalizedRatio, color=Type3ss)) +
+  stat_ecdf(geom = "step") +
+  ylab('Cumulative fraction') +
+  xlab("Cotranscriptional splicing ratio") +
+  theme_bw()
+
+ToTest <- ToPlot %>%
+  filter(Type3ss %in% c("Constitutive intron", "Downstream alternative intron"))
+wilcox.test(NormalizedRatio ~ Type3ss, data=ToTest)
+
+```
+

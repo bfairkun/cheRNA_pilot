@@ -6,4 +6,11 @@ output:
     toc: false
 ---
 
-Welcome to my research website.
+Here I will analyze chromatin associated RNA-seq datasets for 5 LCL lines, prepped by Staley lab. Alongside these new dataests, I will also look at some published datasets for the same lines for RNA-seq ,4sU-RNA-seq (30min, 60min), as well as the chromatin associated RNA and soluble nuclear RNA from [Werner et al](https://www.ncbi.nlm.nih.gov/pubmed/26257179), and some RNA-seq datasets using different fractions and rRNA deplete vs poly-A selection from [Sultan et al](https://www.ncbi.nlm.nih.gov/pubmed/25113896).
+
+All fastq files were trimmed to 50bp and aligned to hg38 with enzembl annotations in two-pass mode with STAR, with mostly default parameters.
+
+
+[Analysis of intron positions and general quantifications of splicing](20190805_PlotIntronPositions.html): How do the different datasets differ with where in the gene the splice sites are.
+
+[Analysis of cotranscriptional splicing by 3'ss ratio](20190909_Count3ssRatioExample.html): Quantification of cotranscriptional splicing by comparing amount of splicing (as quantified by coverage before and after 3'ss) in nascent RNA-seq (chromatin associatied) versus standard RNA-seq.

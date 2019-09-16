@@ -16,9 +16,30 @@ library(tidyverse)
 
 ```{r}
 
+GencodeIntrons <- read.table("../data/GencodeHg38_all_introns.corrected.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'gene', 'intronNumber', 'transcriptType'))
+table(GencodeIntrons$transcriptType)
+
+
+NMD.Transcript.Introns <- GencodeIntrons %>%
+  mutate(Intron=paste(chrom, start,stop,strand, sep=".")) %>%
+  filter(transcriptType=="nonsense_mediated_decay") %>%
+  distinct(Intron) %>% pull(Intron)
+Non.NMD.Transcript.Introns <- GencodeIntrons %>%
+  mutate(Intron=paste(chrom, start,stop,strand, sep=".")) %>%
+  filter(transcriptType!="nonsense_mediated_decay") %>%
+  distinct(Intron) %>% pull(Intron)
+NMD.Specific.Introns <- setdiff(NMD.Transcript.Introns, Non.NMD.Transcript.Introns)
+
+
+
 files <- list.files(path="../output/SJoutAnnotatedAndIntersected", pattern="*.tab.gz", full.names=TRUE, recursive=FALSE)
 SampleName<-gsub("../output/SJoutAnnotatedAndIntersected/(.+).tab.gz", "\\1", files, perl=T)
 SampleName
+
+#Create some translations for nicer labels
+SampleName
+
+
 
 MergedData <- data.frame()
 for (i in seq_along(files)){
@@ -41,6 +62,11 @@ for (i in seq_along(files)){
 
 SamplesToPlot <- c("Sultan_polyA_Total", "Sultan_rRNADeplete_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic", "18862_cheRNA_1","NA18862_argonne", "19201_cheRNA_1", "18913_cheRNA_2")
 
+# SamplesToPlot <- c("CPE_1", "SNE_1", "18862_cheRNA_1","NA18862_argonne", "19201_cheRNA_1", "18913_cheRNA_2")
+
+# SamplesToPlot <- c("Sultan_polyA_Total", "Sultan_rRNADeplete_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic")
+
+
 MergedData %>%
   group_by(samplename, ASType) %>%
   summarise(a_sum=sum(score)) %>%
@@ -51,8 +77,41 @@ MergedData %>%
   geom_col() +
   ylab("Percent unannotated splicing") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
 
+#Same plot but plot percent NMD specific splicing
+MergedData %>%
+  mutate(Intron=paste(geneChr, start,stop,strand, sep=".")) %>%
+  mutate(NMD.status = case_when(Intron %in% NMD.Specific.Introns ~ "NMD.Specific.Intron",
+                                !Intron %in% NMD.Specific.Introns ~ "Not.NMD.Specific.Intron"
+                                )) %>%
+  group_by(samplename, NMD.status) %>%
+  summarise(a_sum=sum(score)) %>%
+  group_by(samplename) %>%
+  mutate(FractionSpliceType = a_sum/sum(a_sum)*100) %>%
+  filter(NMD.status=="NMD.Specific.Intron") %>%
+  ggplot(aes(x = samplename, y = FractionSpliceType)) +
+  geom_col() +
+  ylab("Percent NMD.specific\njunction reads") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
+
+#Same plot but count fraction of spliced reads as fraction of total mapped
+TotalReadCounts <- read.table("../output/CountsPerBam.txt", header=T, sep='\t') %>%
+  mutate(samplename = gsub(".+SecondPass/(.+?)/Aligned.sortedByCoord.+", "\\1", Filename, perl=T)) %>%
+  select(samplename, ReadCount)
+
+MergedData %>%
+  group_by(samplename, ASType) %>%
+  summarise(a_sum=sum(score)) %>%
+  group_by(samplename) %>%
+  left_join(TotalReadCounts) %>%
+  mutate(FractionSpliceType = a_sum/ReadCount*100) %>%
+  ggplot(aes(x = samplename, y = FractionSpliceType)) +
+  geom_col() +
+  ylab("Percent spliced reads") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
 
 #Where are called splice sites
 MergedData %>%
@@ -63,6 +122,7 @@ ggplot(aes(x=Rel3SplicePos, color=samplename)) +
   geom_density(adjust=2, size=1) +
   xlab("Relative position of unannotated splice site") +
   theme_bw()
+
 
 #Same, but weighted by RPM for junction, filtering out extreme outliers (>10 counts)
 MergedData %>%
@@ -128,3 +188,28 @@ ggplot(aes(x=log10(score), color=samplename)) +
 ```
 
 Ok, good. So the 5' enrichment for splice sites in chromatin-associated RNAs is true for unannotated splice sites but not for annotated splice sites. 
+
+
+Ok finally, to complement the idea that this 5' enrichment of novel splice sites has something to do with NMD decay of alternative transcripts, make some metagene plots of positions of introns that are Genocde annotated as within NMD target transcripts.
+
+
+```{r}
+
+MergedData %>%
+  mutate(Intron=paste(geneChr, start,stop,strand, sep=".")) %>%
+  mutate(NMD.status = case_when(Intron %in% NMD.Specific.Introns ~ "NMD.Specific.Intron",
+                                !Intron %in% NMD.Specific.Introns ~ "Not.NMD.Specific.Intron"
+                                )) %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  filter(ASType=="AnnotatedSpliceSite") %>%
+  filter(score<500) %>%
+  group_by(samplename) %>%
+  mutate(a_sum=sum(score)) %>%
+  ungroup() %>%
+ggplot(aes(x=Rel3SplicePos, color=samplename)) +
+  geom_density(aes(linetype=NMD.status), adjust=2, size=1) +
+  xlab("Relative position of splice site") +
+  theme_bw()
+
+```
+
