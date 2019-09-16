@@ -17,16 +17,19 @@ For each 3'ss, I used bedtools to count the number of reads overlapping the upst
 
 I have already calculated counts in upstream and downstream windows for each annotated 3'ss using bedtools (see [Snakemake code](https://github.com/bfairkun/cheRNA_pilot/tree/master/code/snakemake_workflow)). Here I will investigate the results with a few plots. One  result I expect to see is that alernative 3'ss will be spliced less contranscripionally. In the case of cassette exons, it is important to distinguish between the upstream 3'ss and the downstream 3'ss. Upstream 3'ss introns will naturally have less coverage in the downstream window (i.e. in the cassette exon).
 
-First read in Gencode annotated introns and classify the 3'ss as alternative or constitutive, based on how many introns are annotated with each 3'ss. This Gencode file of introns was made using `gtf2leafcutter.pl` script in leafcutter github repo, and it is a redundant file of all intron segments from Gencode gtf. In other words, there are many overlapping introns, and many with the same 3'ss (or 5'ss). So here is the pseudo-code logic on how I classify introns:
+First read in Gencode annotated introns and classify the 3'ss as alternative upstream, alternative downstream, or constitutive, based on how many introns are annotated with each 3'ss. This Gencode file of introns was made using `gtf2leafcutter.pl` script in leafcutter github repo, and it is a redundant file of all intron segments from Gencode gtf. In other words, there are many overlapping introns, including many with the same 3'ss. So here is the pseudo-code logic on how I classify introns:
 
 Constitutive introns: 
-> 3'ss is paired to one and only one 5'ss in the annotations
+
+* 3'ss is paired to one and only one 5'ss in the annotations
 
 Downstream alternative introns:
-> 3'ss is paired to multiple 5'ss in the annotations, and all of the 5'ss that it is paired to are only paired to that 3'ss. This will also include 3'ss that are associated with alt 5'ss usage.
+
+* 3'ss is paired to multiple 5'ss in the annotations, and all of the 5'ss that it is paired to are only paired to that 3'ss. This will also include 3'ss that are associated with alt 5'ss usage.
 
 Upstream alternative introns:
-> 3'ss is paired to a 5'ss that is used in more than 1 intron. This will also include 3'ss that are associated with alt 3'ss usage.
+
+* 3'ss is paired to a 5'ss that is used in more than 1 intron. This will also include 3'ss that are associated with alt 3'ss usage.
  
 
 ```{r Annotate3ssAsConstitutiveOrAlternative}

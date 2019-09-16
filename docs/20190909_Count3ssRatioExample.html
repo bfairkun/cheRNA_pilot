@@ -527,10 +527,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree4ea43f8c9ae683deffd93906eab920028e8a1bc5targetblank4ea43f8a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bfairkun/cheRNA_pilot/tree/4ea43f8c9ae683deffd93906eab920028e8a1bc5" target="_blank">4ea43f8</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottreeb3b13e6c67baa90ec5b2f17febe90ea7baae1c09targetblankb3b13e6a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bfairkun/cheRNA_pilot/tree/b3b13e6c67baa90ec5b2f17febe90ea7baae1c09" target="_blank">b3b13e6</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree4ea43f8c9ae683deffd93906eab920028e8a1bc5targetblank4ea43f8a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottreeb3b13e6c67baa90ec5b2f17febe90ea7baae1c09targetblankb3b13e6a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -580,6 +580,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/b3b13e6c67baa90ec5b2f17febe90ea7baae1c09/analysis/20190909_Count3ssRatioExample.Rmd" target="_blank">b3b13e6</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-09-16
+</td>
+<td>
+update site
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/bfairkun/cheRNA_pilot/b3b13e6c67baa90ec5b2f17febe90ea7baae1c09/docs/20190909_Count3ssRatioExample.html" target="_blank">b3b13e6</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-09-16
+</td>
+<td>
+update site
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -658,10 +692,19 @@ update site
 <pre class="r"><code>library(tidyverse)</code></pre>
 <p>For each 3’ss, I used bedtools to count the number of reads overlapping the upstream 25bp window, and the downstream 25bp window. The ratio of these of these two counts is a measure of splicing efficiency, and the ratio of those ratios in nascent RNA-seq versus standard RNA-seq is a measure of how contranscriptional a splicing event is (see <a href="https://www.ncbi.nlm.nih.gov/pubmed/25929182">Herzel et al</a>). Here I will look at these metrics using a standard RNA-seq dataset and nascent RNA-seq dataset from the same LCL line 18862.</p>
 <p>I have already calculated counts in upstream and downstream windows for each annotated 3’ss using bedtools (see <a href="https://github.com/bfairkun/cheRNA_pilot/tree/master/code/snakemake_workflow">Snakemake code</a>). Here I will investigate the results with a few plots. One result I expect to see is that alernative 3’ss will be spliced less contranscripionally. In the case of cassette exons, it is important to distinguish between the upstream 3’ss and the downstream 3’ss. Upstream 3’ss introns will naturally have less coverage in the downstream window (i.e. in the cassette exon).</p>
-<p>First read in Gencode annotated introns and classify the 3’ss as alternative or constitutive, based on how many introns are annotated with each 3’ss. This Gencode file of introns was made using <code>gtf2leafcutter.pl</code> script in leafcutter github repo, and it is a redundant file of all intron segments from Gencode gtf. In other words, there are many overlapping introns, and many with the same 3’ss (or 5’ss). So here is the pseudo-code logic on how I classify introns:</p>
-<p>Constitutive introns: &gt; 3’ss is paired to one and only one 5’ss in the annotations</p>
-<p>Downstream alternative introns: &gt; 3’ss is paired to multiple 5’ss in the annotations, and all of the 5’ss that it is paired to are only paired to that 3’ss. This will also include 3’ss that are associated with alt 5’ss usage.</p>
-<p>Upstream alternative introns: &gt; 3’ss is paired to a 5’ss that is used in more than 1 intron. This will also include 3’ss that are associated with alt 3’ss usage.</p>
+<p>First read in Gencode annotated introns and classify the 3’ss as alternative upstream, alternative downstream, or constitutive, based on how many introns are annotated with each 3’ss. This Gencode file of introns was made using <code>gtf2leafcutter.pl</code> script in leafcutter github repo, and it is a redundant file of all intron segments from Gencode gtf. In other words, there are many overlapping introns, including many with the same 3’ss. So here is the pseudo-code logic on how I classify introns:</p>
+<p>Constitutive introns:</p>
+<ul>
+<li>3’ss is paired to one and only one 5’ss in the annotations</li>
+</ul>
+<p>Downstream alternative introns:</p>
+<ul>
+<li>3’ss is paired to multiple 5’ss in the annotations, and all of the 5’ss that it is paired to are only paired to that 3’ss. This will also include 3’ss that are associated with alt 5’ss usage.</li>
+</ul>
+<p>Upstream alternative introns:</p>
+<ul>
+<li>3’ss is paired to a 5’ss that is used in more than 1 intron. This will also include 3’ss that are associated with alt 3’ss usage.</li>
+</ul>
 <pre class="r"><code>GencodeIntrons &lt;- read.table(&quot;../data/GencodeHg38_all_introns.corrected.bed.gz&quot;, sep=&#39;\t&#39;, col.names = c(&#39;chrom&#39;, &#39;start&#39;, &#39;stop&#39;, &#39;name&#39;, &#39;score&#39;, &#39;strand&#39;, &#39;gene&#39;, &#39;intronNumber&#39;, &#39;transcriptType&#39;))
 
 SpliceSitesCounted &lt;- GencodeIntrons %&gt;%
