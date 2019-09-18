@@ -436,7 +436,7 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2019-09-16
+<strong>Last updated:</strong> 2019-09-18
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -527,10 +527,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottreeb3b13e6c67baa90ec5b2f17febe90ea7baae1c09targetblankb3b13e6a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bfairkun/cheRNA_pilot/tree/b3b13e6c67baa90ec5b2f17febe90ea7baae1c09" target="_blank">b3b13e6</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree46e6b5961377c38b6a27146ce3cc6a5938143a49targetblank46e6b59a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bfairkun/cheRNA_pilot/tree/46e6b5961377c38b6a27146ce3cc6a5938143a49" target="_blank">46e6b59</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottreeb3b13e6c67baa90ec5b2f17febe90ea7baae1c09targetblankb3b13e6a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree46e6b5961377c38b6a27146ce3cc6a5938143a49targetblank46e6b59a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -540,8 +540,12 @@ Ignored files:
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
 
+Untracked files:
+    Untracked:  analysis/track name="ItemRGBDemo" description="Item RGB demonstration" visibility=2 itemRgb="On"
+
 Unstaged changes:
     Modified:   analysis/20190909_Count3ssRatioExample.Rmd
+    Modified:   data/GencodeHg38_all_introns.corrected.bed.gz
 
 </code></pre>
 <p>
@@ -580,6 +584,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/46e6b5961377c38b6a27146ce3cc6a5938143a49/analysis/20190909_Count3ssRatioExample.Rmd" target="_blank">46e6b59</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-09-16
+</td>
+<td>
+update site
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/bfairkun/cheRNA_pilot/46e6b5961377c38b6a27146ce3cc6a5938143a49/docs/20190909_Count3ssRatioExample.html" target="_blank">46e6b59</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-09-16
+</td>
+<td>
+update site
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -695,13 +733,13 @@ update site
 <p>First read in Gencode annotated introns and classify the 3’ss as alternative upstream, alternative downstream, or constitutive, based on how many introns are annotated with each 3’ss. This Gencode file of introns was made using <code>gtf2leafcutter.pl</code> script in leafcutter github repo, and it is a redundant file of all intron segments from Gencode gtf. In other words, there are many overlapping introns, including many with the same 3’ss. So here is the pseudo-code logic on how I classify introns:</p>
 <p>Constitutive introns:</p>
 <ul>
-<li>3’ss is paired to one and only one 5’ss in the annotations</li>
+<li>3’ss is paired to one and only one 5’ss in the annotations. The 5’ss that it is paired to is paired only to that 3’ss and no other 3’ss.</li>
 </ul>
-<p>Downstream alternative introns:</p>
+<p>Downstream alternative introns (green):</p>
 <ul>
 <li>3’ss is paired to multiple 5’ss in the annotations, and all of the 5’ss that it is paired to are only paired to that 3’ss. This will also include 3’ss that are associated with alt 5’ss usage.</li>
 </ul>
-<p>Upstream alternative introns:</p>
+<p>Upstream alternative introns (blue):</p>
 <ul>
 <li>3’ss is paired to a 5’ss that is used in more than 1 intron. This will also include 3’ss that are associated with alt 3’ss usage.</li>
 </ul>
@@ -724,26 +762,38 @@ Annotated &lt;- SpliceSitesCounted %&gt;%
   ungroup() %&gt;%
   distinct(Acceptor, .keep_all = T) %&gt;%
   mutate(Type3ss = case_when(AcceptorCount == 1 &amp; DonorMax==1 ~ &quot;Constitutive intron&quot;,
-                             AcceptorCount &gt;1 &amp; DonorMax==1 ~ &quot;Downstream alternative intron&quot;,
-                             DonorMax &gt; 1 ~ &quot;Upstream alternative intron&quot;))
-
+                             AcceptorCount &gt;1 &amp; DonorMax &gt; 1 ~ &quot;Downstream alternative intron&quot;,
+                             AcceptorCount == 1 &amp; DonorMax &gt; 1 ~ &quot;Upstream alternative intron&quot;,
+                             AcceptorCount &gt;1 &amp; DonorMax==1 ~ &quot;Unclassifiable&quot;))
 table(Annotated$Type3ss)</code></pre>
 <pre><code>
           Constitutive intron Downstream alternative intron 
-                       149839                          7003 
-  Upstream alternative intron 
-                        51850 </code></pre>
+                       149839                         20115 
+               Unclassifiable   Upstream alternative intron 
+                         7003                         31735 </code></pre>
 <pre class="r"><code># Write out as bed file to visually inspect classifications in IGV to check for bugs
 # Manual inspection of the resulting bed file indiciates I am classifying introns as intended.
+write.table_with_header &lt;- function(x, file, header, ...){
+  cat(header, &#39;\n&#39;,  file = file)
+  write.table(x, file, append = T, ...)
+}
+
 Annotated %&gt;%
   mutate(NewName=paste(Acceptor, Type3ss, sep=&quot;.&quot;)) %&gt;%
+  
   # mutate(NewStart = case_when(strand == &quot;+&quot; ~ stop-25,
   #                             strand == &quot;-&quot; ~ start)) %&gt;%
   # mutate(NewStop = case_when(strand == &quot;+&quot; ~ stop,
   #                          strand == &quot;-&quot; ~ start-25)) %&gt;%
   # select(chrom, NewStart, NewStop, paste(Acceptor, Type3ss), &quot;.&quot;, strand) %&gt;% head()
-  select(chrom, start, stop, NewName, score, strand) %&gt;%
-  write.table(&quot;~/Temporary/3ssAnnotations.bed&quot;, quote=F, sep=&#39;\t&#39;, col.names=F, row.names = F)</code></pre>
+  mutate(Color = case_when(Type3ss == &quot;Constitutive intron&quot; ~ &quot;255,0,0&quot;,
+                   Type3ss == &quot;Downstream alternative intron&quot; ~ &quot;0,204,0&quot;,
+                   Type3ss == &quot;Upstream alternative intron&quot; ~ &quot;0,0,255&quot;,
+                   Type3ss == &quot;Unclassifiable&quot; ~ &quot;224,224,224&quot;)) %&gt;%
+  mutate(thickStart=start, thickEnd=stop, newScore=0) %&gt;%
+  select(chrom, start, stop, Acceptor, newScore, strand, thickStart, thickEnd, Color) %&gt;%
+  # write.table(&quot;~/Temporary/3ssAnnotations.bed&quot;, quote=F, sep=&#39;\t&#39;, col.names=F, row.names = F)
+  write.table_with_header(&quot;~/Temporary/3ssAnnotations.bed&quot;, &#39;browser hide all\ntrack name=&quot;ItemRGBDemo&quot; description=&quot;Item RGB demonstration&quot; visibility=2 itemRgb=&quot;On&quot;&#39;, quote=F, sep=&#39;\t&#39;, col.names=F, row.names = F)</code></pre>
 <p>Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3’ss splice ratios to use for downstream analysis. Then do some plotting. More precisely, I will plot Intron retenetion percent spliced in (Intron retention PSI) which will be <span class="math inline">\(IntronRetentionPSI=\frac{UpstreamCoverage}{DownstreamCoverage + UpstreamCoverage}\)</span>.</p>
 <pre class="r"><code>Cutoff &lt;- 50
 
@@ -752,9 +802,9 @@ nRS &lt;- read.table(&quot;../output/3ssCoverageBeds/18862_cheRNA_1.bed.gz&quot;
 
 ToPlot &lt;- RS %&gt;%
   left_join(nRS, by=&quot;name&quot;) %&gt;%
-  inner_join(Annotated, by=c(&quot;name&quot; = &quot;Acceptor&quot;))%&gt;%
-  mutate(RS.ratio = upstream.x/(downstream.x+upstream.x)) %&gt;%
-  mutate(nRS.ratio = upstream.y/(downstream.y+upstream.y)) %&gt;%
+  inner_join((Annotated %&gt;% filter(Type3ss != &quot;Unclassifiable&quot;)), by=c(&quot;name&quot; = &quot;Acceptor&quot;))%&gt;%
+  mutate(RS.ratio = upstream.x/(downstream.x)) %&gt;%
+  mutate(nRS.ratio = upstream.y/(downstream.y)) %&gt;%
   mutate(NormalizedRatio = nRS.ratio/RS.ratio)
 
 # Plot Intron retenetion PSI.
@@ -762,7 +812,8 @@ ggplot(ToPlot, aes(color=Type3ss)) +
   stat_ecdf(aes(x=nRS.ratio, linetype=&quot;nascent-RNA&quot;), geom = &quot;step&quot;) +
   stat_ecdf(aes(x=RS.ratio, linetype=&quot;polyA-RNA&quot;), geom = &quot;step&quot;) +
   ylab(&#39;Cumulative fraction&#39;) +
-  xlab(&quot;Intron retention PSI&quot;) +
+  xlab(&quot;Intron retention PSI\nMore spliced&lt;-----------&gt;More unspliced&quot;) +
+  scale_x_continuous(trans=&#39;log10&#39;, limits=c(0.001,1)) +
   theme_bw()</code></pre>
 <p><img src="figure/20190909_Count3ssRatioExample.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>
@@ -807,7 +858,7 @@ Benjmain Fair
 ggplot(ToPlot, aes(x=NormalizedRatio, color=Type3ss)) +
   stat_ecdf(geom = &quot;step&quot;) +
   ylab(&#39;Cumulative fraction&#39;) +
-  xlab(&quot;Cotranscriptional splicing ratio&quot;) +
+  xlab(&quot;Cotranscriptional splicing ratio\nMoreCoTxnSplicing&lt;----------&gt;LessConTxnSplicing&quot;) +
   scale_x_continuous(trans=&#39;log10&#39;) +
   theme_bw()</code></pre>
 <p><img src="figure/20190909_Count3ssRatioExample.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -855,7 +906,7 @@ wilcox.test(NormalizedRatio ~ Type3ss, data=ToTest)</code></pre>
     Wilcoxon rank sum test with continuity correction
 
 data:  NormalizedRatio by Type3ss
-W = 134980, p-value = 0.0002172
+W = 459050, p-value = 8.632e-07
 alternative hypothesis: true location shift is not equal to 0</code></pre>
 <p>As expected from <a href="https://www.ncbi.nlm.nih.gov/pubmed/25929182">Herzel et al</a>, 3’ss downstream of cassette exons (which are an intron-centric measure of splicing of the upstream cassette exon) are spliced slower than constitutive introns.</p>
 <p>Next I should see how replicates compare, to see if this statistic is reasonably stable (eventually I could consider QTL mapping using this statistic).</p>
