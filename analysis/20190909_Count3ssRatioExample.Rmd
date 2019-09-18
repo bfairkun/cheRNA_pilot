@@ -45,6 +45,11 @@ SpliceSitesCounted <- GencodeIntrons %>%
   add_count(Acceptor, name="AcceptorCount") %>%
   add_count(Donor, name="DonorCount")
 
+#AcceptorCount is number of intron segments (unique Donor/Acceptor pairs) with that Acceptor 3'ss
+#DonorCount is number of intron segments (unique Donor/Acceptor pairs) with that Donor 5'ss
+#DonorMax is for each acceptor, what is the maximum DonorCount amongst all the donors it is paired with
+
+
 Annotated <- SpliceSitesCounted %>%
   # filter(AcceptorCount==1 & DonorCount==1) %>% dim()
   group_by(Acceptor) %>%
@@ -55,6 +60,8 @@ Annotated <- SpliceSitesCounted %>%
                              AcceptorCount >1 & DonorMax > 1 ~ "Downstream alternative intron",
                              AcceptorCount == 1 & DonorMax > 1 ~ "Upstream alternative intron",
                              AcceptorCount >1 & DonorMax==1 ~ "Unclassifiable"))
+
+#By the above logic, "Unclassifiable"" means a 3ss that is associated with alt 5ss but not exon skipping, since none of the Donors it uses is used more than once.
 table(Annotated$Type3ss)
 
 # Write out as bed file to visually inspect classifications in IGV to check for bugs
@@ -83,7 +90,7 @@ Annotated %>%
   
 ```
 
-Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3'ss splice ratios to use for downstream analysis. Then do some plotting. More precisely, I will plot Intron retenetion percent spliced in (Intron retention PSI) which will be $IntronRetentionPSI=\frac{UpstreamCoverage}{DownstreamCoverage + UpstreamCoverage}$.
+Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3'ss splice ratios to use for downstream analysis. Then do some plotting. More precisely, I will plot Intron retenetion percent spliced in (Intron retention PSI) which will be $IntronRetentionPSI=\frac{UpstreamCoverage}{DownstreamCoverage}$.
 
 
 
