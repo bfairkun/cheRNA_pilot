@@ -1,0 +1,140 @@
+---
+title: "20190909_Count3ssRatioExample"
+author: "Ben Fair"
+date: "9/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+library(tidyverse)
+```
+
+For each 3'ss, I used bedtools to count the number of reads overlapping the upstream 25bp window, and the downstream 25bp window. The ratio of these of these two counts is a measure of splicing efficiency, and the ratio of those ratios in nascent RNA-seq versus standard RNA-seq is a measure of how contranscriptional a splicing event is (see [Herzel et al](https://www.ncbi.nlm.nih.gov/pubmed/25929182)). Here I will look at these metrics using a standard RNA-seq dataset and nascent RNA-seq dataset from the same LCL line 18862.
+
+I have already calculated counts in upstream and downstream windows for each annotated 3'ss using bedtools (see [Snakemake code](https://github.com/bfairkun/cheRNA_pilot/tree/master/code/snakemake_workflow)). Here I will investigate the results with a few plots. One  result I expect to see is that alernative 3'ss will be spliced less contranscripionally. In the case of cassette exons, it is important to distinguish between the upstream 3'ss and the downstream 3'ss. Upstream 3'ss introns will naturally have less coverage in the downstream window (i.e. in the cassette exon).
+
+First read in Gencode annotated introns and classify the 3'ss as alternative upstream, alternative downstream, or constitutive, based on how many introns are annotated with each 3'ss. This Gencode file of introns was made using `gtf2leafcutter.pl` script in leafcutter github repo, and it is a redundant file of all intron segments from Gencode gtf. In other words, there are many overlapping introns, including many with the same 3'ss. So here is the pseudo-code logic on how I classify introns:
+
+Constitutive introns: 
+
+* 3'ss is paired to one and only one 5'ss in the annotations. The 5'ss that it is paired to is paired only to that 3'ss and no other 3'ss.
+
+Downstream alternative introns (green):
+
+* 3'ss is paired to multiple 5'ss in the annotations, and all of the 5'ss that it is paired to are only paired to that 3'ss. This will also include 3'ss that are associated with alt 5'ss usage.
+
+Upstream alternative introns (blue):
+
+* 3'ss is paired to a 5'ss that is used in more than 1 intron. This will also include 3'ss that are associated with alt 3'ss usage.
+ 
+
+```{r Annotate3ssAsConstitutiveOrAlternative}
+GencodeIntrons <- read.table("../data/GencodeHg38_all_introns.corrected.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'gene', 'intronNumber', 'transcriptType'))
+
+SpliceSitesCounted <- GencodeIntrons %>%
+  filter(transcriptType=="protein_coding") %>%
+  distinct(chrom, start, stop, .keep_all = T) %>%
+  mutate(Acceptor = case_when(strand == "+" ~ paste(chrom, stop, strand, sep="."),
+                              strand == "-" ~ paste(chrom, start, strand, sep="."))) %>%
+  mutate(Donor = case_when(strand == "+" ~ paste(chrom, start, strand, sep="."),
+                           strand == "-" ~ paste(chrom, stop, strand, sep="."))) %>%
+  add_count(Acceptor, name="AcceptorCount") %>%
+  add_count(Donor, name="DonorCount")
+
+#AcceptorCount is number of intron segments (unique Donor/Acceptor pairs) with that Acceptor 3'ss
+#DonorCount is number of intron segments (unique Donor/Acceptor pairs) with that Donor 5'ss
+#DonorMax is for each acceptor, what is the maximum DonorCount amongst all the donors it is paired with
+
+
+Annotated <- SpliceSitesCounted %>%
+  # filter(AcceptorCount==1 & DonorCount==1) %>% dim()
+  group_by(Acceptor) %>%
+  mutate(DonorMax=max(DonorCount)) %>%
+  ungroup() %>%
+  distinct(Acceptor, .keep_all = T) %>%
+  mutate(Type3ss = case_when(AcceptorCount == 1 & DonorMax==1 ~ "Constitutive intron",
+                             AcceptorCount >1 & DonorMax > 1 ~ "Downstream alternative intron",
+                             AcceptorCount == 1 & DonorMax > 1 ~ "Upstream alternative intron",
+                             AcceptorCount >1 & DonorMax==1 ~ "Unclassifiable"))
+
+#By the above logic, "Unclassifiable"" means a 3ss that is associated with alt 5ss but not exon skipping, since none of the Donors it uses is used more than once.
+table(Annotated$Type3ss)
+
+# Write out as bed file to visually inspect classifications in IGV to check for bugs
+# Manual inspection of the resulting bed file indiciates I am classifying introns as intended.
+write.table_with_header <- function(x, file, header, ...){
+  cat(header, '\n',  file = file)
+  write.table(x, file, append = T, ...)
+}
+
+Annotated %>%
+  mutate(NewName=paste(Acceptor, Type3ss, sep=".")) %>%
+  
+  # mutate(NewStart = case_when(strand == "+" ~ stop-25,
+  #                             strand == "-" ~ start)) %>%
+  # mutate(NewStop = case_when(strand == "+" ~ stop,
+  #                          strand == "-" ~ start-25)) %>%
+  # select(chrom, NewStart, NewStop, paste(Acceptor, Type3ss), ".", strand) %>% head()
+  mutate(Color = case_when(Type3ss == "Constitutive intron" ~ "255,0,0",
+                   Type3ss == "Downstream alternative intron" ~ "0,204,0",
+                   Type3ss == "Upstream alternative intron" ~ "0,0,255",
+                   Type3ss == "Unclassifiable" ~ "224,224,224")) %>%
+  mutate(thickStart=start, thickEnd=stop, newScore=0) %>%
+  select(chrom, start, stop, Acceptor, newScore, strand, thickStart, thickEnd, Color) %>%
+  # write.table("~/Temporary/3ssAnnotations.bed", quote=F, sep='\t', col.names=F, row.names = F)
+  write.table_with_header("~/Temporary/3ssAnnotations.bed", 'browser hide all\ntrack name="ItemRGBDemo" description="Item RGB demonstration" visibility=2 itemRgb="On"', quote=F, sep='\t', col.names=F, row.names = F)
+  
+```
+
+Now, similarly to Herzel et al, set a minimum read count threshold cutoff for reliable 3'ss splice ratios to use for downstream analysis. Then do some plotting. More precisely, I will plot Intron retenetion percent spliced in (Intron retention PSI) which will be $IntronRetentionPSI=\frac{UpstreamCoverage}{DownstreamCoverage}$.
+
+
+
+```{r}
+Cutoff <- 50
+
+RS <- read.table("../output/3ssCoverageBeds/NA18862_argonne.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'upstream', 'downstream'), stringsAsFactors = F) %>% filter(upstream + downstream >= Cutoff)
+nRS <- read.table("../output/3ssCoverageBeds/18862_cheRNA_1.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'upstream', 'downstream'), stringsAsFactors = F) %>% filter(upstream + downstream >= Cutoff)
+
+ToPlot <- RS %>%
+  left_join(nRS, by="name") %>%
+  inner_join((Annotated %>% filter(Type3ss != "Unclassifiable")), by=c("name" = "Acceptor"))%>%
+  mutate(RS.ratio = upstream.x/(downstream.x)) %>%
+  mutate(nRS.ratio = upstream.y/(downstream.y)) %>%
+  mutate(NormalizedRatio = nRS.ratio/RS.ratio)
+
+# Plot Intron retenetion PSI.
+ggplot(ToPlot, aes(color=Type3ss)) +
+  stat_ecdf(aes(x=nRS.ratio, linetype="nascent-RNA"), geom = "step") +
+  stat_ecdf(aes(x=RS.ratio, linetype="polyA-RNA"), geom = "step") +
+  ylab('Cumulative fraction') +
+  xlab("Intron retention PSI\nMore spliced<----------->More unspliced") +
+  scale_x_continuous(trans='log10', limits=c(0.001,1)) +
+  theme_bw()
+```
+
+Chromatin associated RNA has higher $Intron Retention PSI$ as expected. Alternative upstream introns also have $Intron Retention PSI$ as expected, since there should be less coverage downstream of those 3'ss for cassette exons. Now quantify cotrnanscriptional splicing with a metric defined as $\frac{Intron retention PSI_{nascent}}{Intron retention PSI_{polyA}}$.
+
+```{r}
+# Plot cotranscriptional splicing
+ggplot(ToPlot, aes(x=NormalizedRatio, color=Type3ss)) +
+  stat_ecdf(geom = "step") +
+  ylab('Cumulative fraction') +
+  xlab("Cotranscriptional splicing ratio\nMoreCoTxnSplicing<---------->LessConTxnSplicing") +
+  scale_x_continuous(trans='log10') +
+  theme_bw()
+
+ToTest <- ToPlot %>%
+  filter(Type3ss %in% c("Constitutive intron", "Downstream alternative intron"))
+wilcox.test(NormalizedRatio ~ Type3ss, data=ToTest)
+
+```
+
+As expected from [Herzel et al](https://www.ncbi.nlm.nih.gov/pubmed/25929182), 3'ss downstream of cassette exons (which are an intron-centric measure of splicing of the upstream cassette exon) are spliced slower than constitutive introns.
+
+Next I should see how replicates compare, to see if this statistic is reasonably stable (eventually I could consider QTL mapping using this statistic).
+

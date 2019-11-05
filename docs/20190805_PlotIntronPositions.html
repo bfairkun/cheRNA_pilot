@@ -436,7 +436,7 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2019-08-16
+<strong>Last updated:</strong> 2019-09-16
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -460,7 +460,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -527,21 +527,24 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree74cc08e7f5b2e7eb5d21f4f03c61cfc7e22ef0d3targetblank74cc08ea"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bfairkun/cheRNA_pilot/tree/74cc08e7f5b2e7eb5d21f4f03c61cfc7e22ef0d3" target="_blank">74cc08e</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree68df993b35b543c75aa946291fc809f0dde8ec9ftargetblank68df993a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bfairkun/cheRNA_pilot/tree/68df993b35b543c75aa946291fc809f0dde8ec9f" target="_blank">68df993</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree74cc08e7f5b2e7eb5d21f4f03c61cfc7e22ef0d3targetblank74cc08ea" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombfairkuncheRNApilottree68df993b35b543c75aa946291fc809f0dde8ec9ftargetblank68df993a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 </p>
 <pre><code>
 Ignored files:
+    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
 
 Untracked files:
-    Untracked:  analysis/20190805_PlotIntronPositions.Rmd
-    Untracked:  docs/figure/
+    Untracked:  analysis/20190909_Count3ssRatioExample.Rmd
+
+Unstaged changes:
+    Modified:   analysis/20190805_PlotIntronPositions.Rmd
 
 </code></pre>
 <p>
@@ -554,16 +557,135 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
-There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+These are the previous versions of the R Markdown and HTML files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view them.
 </p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/9b62d8b5d27e2c9cdce639507a09312e056752d4/analysis/20190805_PlotIntronPositions.Rmd" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+<td>
+addded to site, added scripts
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/bfairkun/cheRNA_pilot/9b62d8b5d27e2c9cdce639507a09312e056752d4/docs/20190805_PlotIntronPositions.html" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+<td>
+addded to site, added scripts
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr>
 </div>
 </div>
 </div>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre class="r"><code>files &lt;- list.files(path=&quot;../output/SJoutAnnotatedAndIntersected&quot;, pattern=&quot;*.tab.gz&quot;, full.names=TRUE, recursive=FALSE)
+<pre class="r"><code>GencodeIntrons &lt;- read.table(&quot;../data/GencodeHg38_all_introns.corrected.bed.gz&quot;, sep=&#39;\t&#39;, col.names = c(&#39;chrom&#39;, &#39;start&#39;, &#39;stop&#39;, &#39;name&#39;, &#39;score&#39;, &#39;strand&#39;, &#39;gene&#39;, &#39;intronNumber&#39;, &#39;transcriptType&#39;))
+table(GencodeIntrons$transcriptType)</code></pre>
+<pre><code>
+          3prime_overlapping_ncRNA                          antisense 
+                                44                              24223 
+     bidirectional_promoter_lncRNA                          IG_C_gene 
+                               938                                 76 
+                   IG_C_pseudogene                          IG_V_gene 
+                                 6                                143 
+                   IG_V_pseudogene                            lincRNA 
+                               100                              32092 
+                        non_coding                     non_stop_decay 
+                                 4                                538 
+           nonsense_mediated_decay             polymorphic_pseudogene 
+                            123432                                280 
+              processed_pseudogene               processed_transcript 
+                              1621                              99728 
+                    protein_coding                         pseudogene 
+                            665451                                 56 
+                   retained_intron                     sense_intronic 
+                             94262                                776 
+                 sense_overlapping                                TEC 
+                               719                                  9 
+                         TR_C_gene                          TR_V_gene 
+                                17                                105 
+                   TR_V_pseudogene   transcribed_processed_pseudogene 
+                                24                                167 
+    transcribed_unitary_pseudogene transcribed_unprocessed_pseudogene 
+                               922                               4700 
+                unitary_pseudogene             unprocessed_pseudogene 
+                               197                               5449 </code></pre>
+<pre class="r"><code>NMD.Transcript.Introns &lt;- GencodeIntrons %&gt;%
+  mutate(Intron=paste(chrom, start,stop,strand, sep=&quot;.&quot;)) %&gt;%
+  filter(transcriptType==&quot;nonsense_mediated_decay&quot;) %&gt;%
+  distinct(Intron) %&gt;% pull(Intron)
+Non.NMD.Transcript.Introns &lt;- GencodeIntrons %&gt;%
+  mutate(Intron=paste(chrom, start,stop,strand, sep=&quot;.&quot;)) %&gt;%
+  filter(transcriptType!=&quot;nonsense_mediated_decay&quot;) %&gt;%
+  distinct(Intron) %&gt;% pull(Intron)
+NMD.Specific.Introns &lt;- setdiff(NMD.Transcript.Introns, Non.NMD.Transcript.Introns)
+
+
+
+files &lt;- list.files(path=&quot;../output/SJoutAnnotatedAndIntersected&quot;, pattern=&quot;*.tab.gz&quot;, full.names=TRUE, recursive=FALSE)
 SampleName&lt;-gsub(&quot;../output/SJoutAnnotatedAndIntersected/(.+).tab.gz&quot;, &quot;\\1&quot;, files, perl=T)
+SampleName</code></pre>
+<pre><code> [1] &quot;18862_cheRNA_1&quot;                  &quot;18862_cheRNA_2&quot;                 
+ [3] &quot;18913_cheRNA_1&quot;                  &quot;18913_cheRNA_2&quot;                 
+ [5] &quot;19138_cheRNA_1&quot;                  &quot;19138_cheRNA_2&quot;                 
+ [7] &quot;19160_cheRNA_1&quot;                  &quot;19160_cheRNA_2&quot;                 
+ [9] &quot;19201_cheRNA_1&quot;                  &quot;19201_cheRNA_2&quot;                 
+[11] &quot;CPE_1&quot;                           &quot;NA18862_argonne&quot;                
+[13] &quot;NA18913_30min&quot;                   &quot;NA18913_60min&quot;                  
+[15] &quot;NA18913_argonne&quot;                 &quot;NA19138_30min&quot;                  
+[17] &quot;NA19138_60min&quot;                   &quot;NA19138_argonne&quot;                
+[19] &quot;NA19160_argonne&quot;                 &quot;NA19201_30min&quot;                  
+[21] &quot;NA19201_60min&quot;                   &quot;NA19201_argonne&quot;                
+[23] &quot;SNE_1&quot;                           &quot;Sultan_polyA_Total&quot;             
+[25] &quot;Sultan_rRNADepelete_cytoplasmic&quot; &quot;Sultan_rRNADepelete_nuclear&quot;    
+[27] &quot;Sultan_rRNADeplete_Total&quot;       </code></pre>
+<pre class="r"><code>#Create some translations for nicer labels
 SampleName</code></pre>
 <pre><code> [1] &quot;18862_cheRNA_1&quot;                  &quot;18862_cheRNA_2&quot;                 
  [3] &quot;18913_cheRNA_1&quot;                  &quot;18913_cheRNA_2&quot;                 
@@ -600,6 +722,11 @@ for (i in seq_along(files)){
 
 SamplesToPlot &lt;- c(&quot;Sultan_polyA_Total&quot;, &quot;Sultan_rRNADeplete_Total&quot;, &quot;Sultan_rRNADepelete_nuclear&quot;, &quot;Sultan_rRNADepelete_cytoplasmic&quot;, &quot;18862_cheRNA_1&quot;,&quot;NA18862_argonne&quot;, &quot;19201_cheRNA_1&quot;, &quot;18913_cheRNA_2&quot;)
 
+# SamplesToPlot &lt;- c(&quot;CPE_1&quot;, &quot;SNE_1&quot;, &quot;18862_cheRNA_1&quot;,&quot;NA18862_argonne&quot;, &quot;19201_cheRNA_1&quot;, &quot;18913_cheRNA_2&quot;)
+
+# SamplesToPlot &lt;- c(&quot;Sultan_polyA_Total&quot;, &quot;Sultan_rRNADeplete_Total&quot;, &quot;Sultan_rRNADepelete_nuclear&quot;, &quot;Sultan_rRNADepelete_cytoplasmic&quot;)
+
+
 MergedData %&gt;%
   group_by(samplename, ASType) %&gt;%
   summarise(a_sum=sum(score)) %&gt;%
@@ -610,58 +737,309 @@ MergedData %&gt;%
   geom_col() +
   ylab(&quot;Percent unannotated splicing&quot;) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))</code></pre>
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))</code></pre>
 <p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-2-1">
+Past versions of unnamed-chunk-2-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-2-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/9b62d8b5d27e2c9cdce639507a09312e056752d4/docs/figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-1.png" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>#Same plot but plot percent NMD specific splicing
+MergedData %&gt;%
+  mutate(Intron=paste(geneChr, start,stop,strand, sep=&quot;.&quot;)) %&gt;%
+  mutate(NMD.status = case_when(Intron %in% NMD.Specific.Introns ~ &quot;NMD.Specific.Intron&quot;,
+                                !Intron %in% NMD.Specific.Introns ~ &quot;Not.NMD.Specific.Intron&quot;
+                                )) %&gt;%
+  group_by(samplename, NMD.status) %&gt;%
+  summarise(a_sum=sum(score)) %&gt;%
+  group_by(samplename) %&gt;%
+  mutate(FractionSpliceType = a_sum/sum(a_sum)*100) %&gt;%
+  filter(NMD.status==&quot;NMD.Specific.Intron&quot;) %&gt;%
+  ggplot(aes(x = samplename, y = FractionSpliceType)) +
+  geom_col() +
+  ylab(&quot;Percent NMD.specific\njunction reads&quot;) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-2-2">
+Past versions of unnamed-chunk-2-2.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-2-2" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/9b62d8b5d27e2c9cdce639507a09312e056752d4/docs/figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-2.png" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>#Same plot but count fraction of spliced reads as fraction of total mapped
+TotalReadCounts &lt;- read.table(&quot;../output/CountsPerBam.txt&quot;, header=T, sep=&#39;\t&#39;) %&gt;%
+  mutate(samplename = gsub(&quot;.+SecondPass/(.+?)/Aligned.sortedByCoord.+&quot;, &quot;\\1&quot;, Filename, perl=T)) %&gt;%
+  select(samplename, ReadCount)
+
+MergedData %&gt;%
+  group_by(samplename, ASType) %&gt;%
+  summarise(a_sum=sum(score)) %&gt;%
+  group_by(samplename) %&gt;%
+  left_join(TotalReadCounts) %&gt;%
+  mutate(FractionSpliceType = a_sum/ReadCount*100) %&gt;%
+  ggplot(aes(x = samplename, y = FractionSpliceType)) +
+  geom_col() +
+  ylab(&quot;Percent spliced reads&quot;) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-2-3">
+Past versions of unnamed-chunk-2-3.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-2-3" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/9b62d8b5d27e2c9cdce639507a09312e056752d4/docs/figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-3.png" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>#Where are called splice sites
+MergedData %&gt;%
+  filter(samplename %in% SamplesToPlot) %&gt;%
+  filter(ASType!=&quot;AnnotatedSpliceSite&quot;) %&gt;%
+  filter(score&gt;0) %&gt;%
+ggplot(aes(x=Rel3SplicePos, color=samplename)) +
+  geom_density(adjust=2, size=1) +
+  xlab(&quot;Relative position of unannotated splice site&quot;) +
+  theme_bw()</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Same, but weighted by RPM for junction, filtering out extreme outliers (&gt;10 counts)
+MergedData %&gt;%
+  filter(samplename %in% SamplesToPlot) %&gt;%
+  filter(ASType!=&quot;AnnotatedSpliceSite&quot;) %&gt;%
+  filter(score&gt;0) %&gt;%
+  filter(score&lt;10) %&gt;%
+  group_by(samplename) %&gt;%
+  mutate(a_sum=sum(score)) %&gt;%
+  ungroup() %&gt;%
+ggplot(aes(x=Rel5SplicePos, color=samplename)) +
+  geom_density(adjust=2, aes(weight=score/a_sum)) +
+  theme_bw()</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-5.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code># MergedData %&gt;%
 #   filter(samplename %in% SamplesToPlot) %&gt;%
 #   filter(ASType!=&quot;AnnotatedSpliceSite&quot;) %&gt;%
 #   filter(score&gt;0) %&gt;%
 #   group_by(samplename) %&gt;%
 #   mutate(a_sum=sum(score)) %&gt;%
-#   ungroup() %&gt;%
-# ggplot(aes(x=Rel3SplicePos, color=samplename)) +
-#   geom_density(aes(weight=score/a_sum)) +
-#   theme_bw()
-
-# MergedData %&gt;%
-#   filter(samplename %in% SamplesToPlot) %&gt;%
-#   filter(ASType!=&quot;AnnotatedSpliceSite&quot;) %&gt;%
-#   filter(score&gt;0) %&gt;%
-#   group_by(samplename) %&gt;%
-#   mutate(a_sum=sum(score)) %&gt;%
 #   mutate(frac=score/a_sum)%&gt;%
-#   summarise(max=max(frac))
-
+#   summarise(max=max(frac))</code></pre>
+<p>Ok, so nuclear (and chromatin associated) fractions have more unannotated splicing by a factor of about 1.5X to 2X, and of those unannotated splice sites seem very slightly biased towards the 5’ end of genes.</p>
+<p>As a control, I should make the same metaplots for annotated splice sites</p>
+<pre class="r"><code>#Where are splice events
 MergedData %&gt;%
   filter(samplename %in% SamplesToPlot) %&gt;%
-  filter(ASType!=&quot;AnnotatedSpliceSite&quot;) %&gt;%
-ggplot(aes(x=Rel3SplicePos, color=samplename)) +
-  geom_density(adjust=3, size=1) +
-  xlab(&quot;Relative position of unannotated splice site&quot;) +
-  theme_bw()</code></pre>
-<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
-<p>Ok, so nuclear (and chromatin associated) fractions have more unannotated splicing by a factor of about 1.5X to 2X, and of those unannotated splice sites are biased towards the 5’ end of genes.</p>
-<p>As a control, I should make the same metaplots for annotated splice sites</p>
-<pre class="r"><code>MergedData %&gt;%
-  filter(samplename %in% SamplesToPlot) %&gt;%
   filter(ASType==&quot;AnnotatedSpliceSite&quot;) %&gt;%
-  filter(score&gt;1) %&gt;%
+  filter(score&gt;0) %&gt;%
   ggplot(aes(x=Rel3SplicePos, color=samplename)) +
-    geom_density(adjust=3, size=1) +
+    geom_density(adjust=2, size=1) +
     xlab(&quot;Relative position of annotated splice site&quot;) +
     theme_bw()</code></pre>
 <p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code># ToPlot &lt;- MergedData %&gt;%
-#   filter(samplename %in% SamplesToPlot) %&gt;%
-#   filter(ASType==&quot;AnnotatedSpliceSite&quot;) %&gt;%
-#   filter(score&gt;0) %&gt;%
-#   group_by(samplename) %&gt;%
-#   mutate(a_sum=sum(score)) %&gt;%
-#   ungroup()
-# ggplot(ToPlot, aes(x=Rel5SplicePos, color=samplename)) +
-#   geom_density(adjust=3, size=1, aes(weight=score/a_sum)) +
-#   theme_bw()</code></pre>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-3-1">
+Past versions of unnamed-chunk-3-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-3-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/9b62d8b5d27e2c9cdce639507a09312e056752d4/docs/figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-3-1.png" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>#Same but weighted by junction RPM
+ToPlot &lt;- MergedData %&gt;%
+  filter(samplename %in% SamplesToPlot) %&gt;%
+  filter(ASType==&quot;AnnotatedSpliceSite&quot;) %&gt;%
+  filter(score&gt;0) %&gt;%
+  filter(score&lt;500) %&gt;%
+  group_by(samplename) %&gt;%
+  mutate(a_sum=sum(score)) %&gt;%
+  ungroup()
+ggplot(ToPlot, aes(x=Rel3SplicePos, color=samplename)) +
+  geom_density(adjust=2, size=1, aes(weight=score/a_sum)) +
+  theme_bw()</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-3-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-3-2">
+Past versions of unnamed-chunk-3-2.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-3-2" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/bfairkun/cheRNA_pilot/blob/9b62d8b5d27e2c9cdce639507a09312e056752d4/docs/figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-3-2.png" target="_blank">9b62d8b</a>
+</td>
+<td>
+Benjmain Fair
+</td>
+<td>
+2019-08-26
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>MergedData %&gt;%
+  filter(samplename %in% SamplesToPlot) %&gt;%
+  filter(ASType==&quot;AnnotatedSpliceSite&quot;) %&gt;%
+  filter(score&gt;0) %&gt;%
+ggplot(aes(x=log10(score), color=samplename)) +
+  geom_density() +
+  theme_bw()</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-3-3.png" width="672" style="display: block; margin: auto;" /></p>
 <p>Ok, good. So the 5’ enrichment for splice sites in chromatin-associated RNAs is true for unannotated splice sites but not for annotated splice sites.</p>
+<p>Ok finally, to complement the idea that this 5’ enrichment of novel splice sites has something to do with NMD decay of alternative transcripts, make some metagene plots of positions of introns that are Genocde annotated as within NMD target transcripts.</p>
+<pre class="r"><code>MergedData %&gt;%
+  mutate(Intron=paste(geneChr, start,stop,strand, sep=&quot;.&quot;)) %&gt;%
+  mutate(NMD.status = case_when(Intron %in% NMD.Specific.Introns ~ &quot;NMD.Specific.Intron&quot;,
+                                !Intron %in% NMD.Specific.Introns ~ &quot;Not.NMD.Specific.Intron&quot;
+                                )) %&gt;%
+  filter(samplename %in% SamplesToPlot) %&gt;%
+  filter(ASType==&quot;AnnotatedSpliceSite&quot;) %&gt;%
+  filter(score&lt;500) %&gt;%
+  group_by(samplename) %&gt;%
+  mutate(a_sum=sum(score)) %&gt;%
+  ungroup() %&gt;%
+ggplot(aes(x=Rel3SplicePos, color=samplename)) +
+  geom_density(aes(linetype=NMD.status), adjust=2, size=1) +
+  xlab(&quot;Relative position of splice site&quot;) +
+  theme_bw()</code></pre>
+<p><img src="figure/20190805_PlotIntronPositions.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -699,10 +1077,10 @@ loaded via a namespace (and not attached):
 [25] httr_1.4.0       knitr_1.23       hms_0.4.2        generics_0.0.2  
 [29] fs_1.3.1         rprojroot_1.3-2  grid_3.5.1       tidyselect_0.2.5
 [33] glue_1.3.1       R6_2.4.0         readxl_1.3.1     rmarkdown_1.13  
-[37] modelr_0.1.4     magrittr_1.5     backports_1.1.4  scales_1.0.0    
-[41] htmltools_0.3.6  rvest_0.3.4      assertthat_0.2.1 colorspace_1.4-1
-[45] labeling_0.3     stringi_1.4.3    lazyeval_0.2.2   munsell_0.5.0   
-[49] broom_0.5.2      crayon_1.3.4    </code></pre>
+[37] modelr_0.1.4     magrittr_1.5     whisker_0.3-2    backports_1.1.4 
+[41] scales_1.0.0     htmltools_0.3.6  rvest_0.3.4      assertthat_0.2.1
+[45] colorspace_1.4-1 labeling_0.3     stringi_1.4.3    lazyeval_0.2.2  
+[49] munsell_0.5.0    broom_0.5.2      crayon_1.3.4    </code></pre>
 </div>
 
 
