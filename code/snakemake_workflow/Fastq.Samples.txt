@@ -36,3 +36,8 @@ Sultan_rRNADeplete_Total		ENA_Fastq/ERR304487_1.fastq.gz
 Sultan_polyA_Total		ENA_Fastq/ERR304479_1.fastq.gz	
 Sultan_rRNADepelete_nuclear		ENA_Fastq/ERR304483_1.fastq.gz	
 Sultan_rRNADepelete_cytoplasmic		ENA_Fastq/ERR304485_1.fastq.gz	
+Mayer_cyto_RNA	SRR1575938		
+Mayer_nucl_RNA	SRR1575937		
+Mayer_chrom_RNA	SRR1575935		
+Mayer_NETseq	SRR1575919		
+

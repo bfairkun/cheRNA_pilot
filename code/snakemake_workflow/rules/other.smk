@@ -14,3 +14,19 @@ rule LiftOverChromHMM:
         OutputBed = "../../data/Gm12878.chromHMM.hg38.bed.gz"
     shell:
         "liftOver {input.InputBedGz} {input.chain} /dev/stdout /dev/null | gzip - > {output.OutputBed}"
+
+rule DownloadGencodeAnnotations:
+    output:
+        "Misc/GencodeOriginalFiles/gencode.v31.annotation.gtf.gz"
+    shell:
+        """
+        wget -O {output} ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/gencode.v31.annotation.gtf.gz
+        """
+
+rule FilterForHighSupportTranscripts:
+    input:
+        "Misc/GencodeOriginalFiles/gencode.v31.annotation.gtf.gz"
+    output:
+        ""
+
+

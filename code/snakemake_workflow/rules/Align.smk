@@ -220,9 +220,9 @@ rule BedgraphAndBigwigs:
         UnstrandBw = "Alignments/SecondPass/{sample}/Unstranded.bw",
     shell:
         """
-        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -strand + -split -scale $(bc <<< "scale=6;1000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.PlusBg}
-        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -strand - -split -scale $(bc <<< "scale=6;1000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.MinusBg}
-        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -split -scale $(bc <<< "scale=6;1000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.UnstrandBg}
+        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -strand + -split -scale $(bc <<< "scale=3;1000000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.PlusBg}
+        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -strand - -split -scale $(bc <<< "scale=3;1000000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.MinusBg}
+        samtools view -bh -F256 {input.bam} | bedtools genomecov -max 10000 -ibam - -bg -split -scale $(bc <<< "scale=3;1000000000/$(samtools idxstats {input.bam} | awk '{{sum+=$2}} END{{printf sum}}')") | sort -k1,1 -k2,2n > {output.UnstrandBg}
         bedGraphToBigWig {output.PlusBg} {input.fai} {output.PlusBw}
         bedGraphToBigWig {output.MinusBg} {input.fai} {output.MinusBw}
         bedGraphToBigWig {output.UnstrandBg} {input.fai} {output.UnstrandBw}
