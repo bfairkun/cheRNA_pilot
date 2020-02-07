@@ -20,6 +20,7 @@ rule all:
         expand("Junctions/{sample}.junctions.bed.gz", sample=SampleList),
         # expand("Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam", sample=SampleList_PE),
         # "Misc/computeMatrix.gz",
+        "../../output/CountsPerBam.txt",
         "Misc/GencodeHg38_all_introns.downstream3ssWindows.bed",
         "Misc/GencodeHg38_all_introns.corrected.bed",
         # "Misc/computeMatrix.introns.gz",

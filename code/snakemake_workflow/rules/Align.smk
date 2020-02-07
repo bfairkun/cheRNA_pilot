@@ -1,5 +1,19 @@
 Human_genomeDir = config["Human_ref"]["genome_dir"][:-1]
 
+def GetClippingParameterForLexogenDataset(wildcards):
+    if wildcards.sample.endswith("_L"):
+        return("|fastx_trimmer -f 13")
+    else:
+        return("")
+
+def GetClippingParameterForLexogenDatasetMatchedLength(wildcards):
+    if wildcards.sample.endswith("_L"):
+        return("|fastx_trimmer -f 13 -l 58")
+    else:
+        return("|fastx_trimmer -l 46")
+
+
+
 rule STAR_make_index_human:
     input:
         fasta=config["Human_ref"]["genome_fasta"],
@@ -39,13 +53,14 @@ rule STAR_alignment_FirstPass:
         "logs/STAR_FirstPass/{sample}.log"
     threads: 8
     params:
-        index = Human_genomeDir
+        index = Human_genomeDir,
+        clippingParam = GetClippingParameterForLexogenDataset
     output:
         SJout = "Alignments/FirstPass/{sample}/SJ.out.tab"
     shell:
         """
         ulimit -v 31538428657
-        STAR --runThreadN {threads} --genomeDir {params.index} --readFilesIn {input.R1} --readFilesCommand zcat --outSAMmultNmax 1 --outSAMtype None --outFileNamePrefix Alignments/FirstPass/{wildcards.sample}/ &> {log}
+        STAR --runThreadN {threads} --limitOutSJcollapsed 2000000 --genomeDir {params.index} --readFilesIn <(zcat {input.R1} {params.clippingParam}) --readFilesCommand zcat --outSAMmultNmax 1 --outSAMtype None --outFileNamePrefix Alignments/FirstPass/{wildcards.sample}/ &> {log}
         """
 
 rule STAR_make_index_human_AfterFirstPass:
@@ -69,6 +84,8 @@ rule STAR_alignment_SecondPass_PE:
         R2 = "Sample_Fastq_PE/{sample}.R2.fastq.gz"
     log:
         "logs/STAR_SecondPass_PE/{sample}.log"
+    params:
+        clippingParam = GetClippingParameterForLexogenDataset
     threads: 8
     output:
         SJout = "Alignments/SecondPass_PE/{sample}/SJ.out.tab",
@@ -78,7 +95,7 @@ rule STAR_alignment_SecondPass_PE:
     shell:
         """
         ulimit -v 31538428657
-        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn {input.R1} {input.R2} --readFilesCommand zcat --outSAMtype BAM Unsorted --outFileNamePrefix Alignments/SecondPass_PE/{wildcards.sample}/ --outReadsUnmapped Fastx --alignEndsType EndToEnd &> {log}
+        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn <(zcat {input.R1} {params.clipParam}) <(zcat {input.R2})  --outSAMtype BAM Unsorted --outFileNamePrefix Alignments/SecondPass_PE/{wildcards.sample}/ --outReadsUnmapped Fastx --alignEndsType EndToEnd &> {log}
         samtools view -bh Alignments/SecondPass_PE/{wildcards.sample}/Aligned.out.bam > {output.bam}
         samtools index {output.bam}
         """
@@ -108,10 +125,12 @@ rule STAR_alignment_SecondPass:
         SJout = "Alignments/SecondPass/{sample}/SJ.out.tab",
         bam = "Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam",
         bai =  "Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam.bai"
+    params:
+        clipParam = GetClippingParameterForLexogenDatasetMatchedLength
     shell:
         """
         ulimit -v 31538428657
-        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn <(zcat {input.R1} | fastx_trimmer -l 46) --outSAMtype BAM SortedByCoordinate --outWigType wiggle --outFileNamePrefix Alignments/SecondPass/{wildcards.sample}/ &> {log}
+        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn <(zcat {input.R1} {params.clipParam}) --outSAMtype BAM SortedByCoordinate --outWigType wiggle --outFileNamePrefix Alignments/SecondPass/{wildcards.sample}/ &> {log}
         samtools index {output.bam}
         """
 
@@ -290,6 +309,18 @@ rule MakeTopHatJuncBedFiles:
         """
         bash scripts/SJ_to_junctions.sh {input.SJ} Junctions/{wildcards.sample}.junctions.bed
         gzip Junctions/{wildcards.sample}.junctions.bed
+        """
+
+rule CountsPerBam:
+    input:
+        expand("Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam", sample=SampleList),
+    output:
+        "../../output/CountsPerBam.txt"
+    log:
+        "logs/CountsPerBam.log"
+    shell:
+        """
+        bash scripts/CountReadsPerBam.sh {output} {input} 2> {log}
         """
 
 # rule TopHatJuncBedFilesToBigBed:
