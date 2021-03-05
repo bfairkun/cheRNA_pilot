@@ -11,23 +11,35 @@ rule all:
         # Subsequent target rules can be specified below. They should start with all_*.
         # SRA_fastq_for_download,
         # expand("Sample_Fastq/{sample}.fastq.gz", sample=SampleList),
-        # expand( "Alignments/SecondPass/{sample}/SJ.out.annotated.tab", sample=SampleList),
-        config["Human_ref"]["genome_dir_hisat"] + "genome.1.ht2",
-        expand( "Alignments/SecondPass/{sample}/Unstranded.bw", sample=SampleList),
-        expand(config["gitinclude_output"] + "SJoutAnnotatedAndIntersected/{sample}.tab.gz", sample=SampleList),
-        expand(config["gitinclude_output"] +  "3ssCoverageBeds/{sample}.bed.gz", sample=SampleList),
-        expand("UnstrandedBigwigs/{sample}.bw", sample=SampleList),
-        expand("Junctions/{sample}.junctions.bed.gz", sample=SampleList),
+        # "LongIntronWindowCounts/18858_cheRNA_L.bed.gz",
+        # "LongIntronWindowCounts/19201_cheRNA_1.bed.gz",
+        # "LongIntronWindowCounts/19138_cheRNA_1.bed.gz",
+        # "Misc/GencodeHg38_all_introns.corrected.uniq.bed",
+        # expand( "Alignments/SecondPassTest/{sample}/SJ.out.tab", sample=["18858_cytRNA_L", "18858_nucRNA_L", "18858_cheRNA_L"]),
+        # config["Human_ref"]["genome_dir_hisat"] + "genome.1.ht2",
+        # expand( "Alignments/SecondPass/{sample}/Unstranded.bw", sample=SampleList),
+        # expand(config["gitinclude_output"] + "SJoutAnnotatedAndIntersected/{sample}.tab.gz", sample=SampleList),
+        # expand(config["gitinclude_output"] +  "3ssCoverageBeds/{sample}.bed.gz", sample=SampleList),
+        # expand("UnstrandedBigwigs/{sample}.bw", sample=SampleList),
+        # expand("Junctions/{sample}.junctions.bed.gz", sample=SampleList),
+        # expand("qualimap/{sample}/rnaseq_qc_results.txt", sample=SampleList),
         # expand("Alignments/SecondPass_PE/{sample}/Aligned.out.sorted.bam", sample=SampleList_PE),
         # "Misc/computeMatrix.gz",
-        "../../output/CountsPerBam.txt",
+        # "../../output/CountsPerBam.txt",
         "Misc/GencodeHg38_all_introns.downstream3ssWindows.bed",
         "Misc/GencodeHg38_all_introns.corrected.bed",
         # "Misc/computeMatrix.introns.gz",
         "Misc/Gm12878.chromHMM.hg19.bed.gz",
         # "leafcutter/leafcutter_perind.counts.gz"
-        "../../data/Gm12878.chromHMM.hg38.bed.gz"
-
+        "../../data/Gm12878.chromHMM.hg38.bed.gz",
+        # "Multiqc/multiqc_report.html",
+        "../../output/VelosoTxnRates.xlsx",
+        "MultiqcQuick/multiqc_report.html",
+        "../../output/QuickAnalyses/IdxStats.tab",
+        "../../output/QuickAnalyses/FeatureCounts.txt.gz",
+        expand("QuickAnalyses/Bigwigs/{sample}.bw", sample=SampleList),
+        expand("../output/LongIntronWindowCounts/{sample}.bed.gz", sample=YisSamples)
 include: "rules/other.smk"
 include: "rules/DownloadAndMergeFastq.smk"
 include: "rules/Align.smk"
+include: "rules/QuickAlign.smk"

@@ -1,0 +1,210 @@
+---
+title: "SlopeOfCoverageOverLongIntrons"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(broom)
+library(viridis)
+library(readxl)
+library(MASS)
+
+sample_n_of <- function(data, size, ...) {
+  dots <- quos(...)
+  
+  group_ids <- data %>% 
+    group_by(!!! dots) %>% 
+    group_indices()
+  
+  sampled_groups <- sample(unique(group_ids), size)
+  
+  data %>% 
+    filter(group_ids %in% sampled_groups)
+}
+
+```
+
+Read in table of counts of long (>10kb) non-overlapping introns broken into 100 windows each, with read coverage of chRNA-seq.
+
+```{r}
+VelosoTxnRates <- read_excel("../output/VelosoTxnRates.xlsx") %>%
+  dplyr::select(gene="Ensembl Gene ID", rate="K562 Elongation Rate (bp/min)") %>%
+  mutate(rate=as.numeric(rate))
+
+Counts <- fread("../code/snakemake_workflow/LongIntronWindowCounts/19201_cheRNA_1.bed.gz", col.names = c("chr", "start", "stop", "name", "score", "strand", "Readcount"), header=F) %>%
+  separate(name, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand", "Window"),convert=T, sep = "_") %>%
+  unite(IntronName, gene, IntChr, IntStart, IntStop, IntStrand) %>%
+  dplyr::select(chr, start, stop, Window, IntronName, Readcount) 
+
+IntronCountSums <- Counts %>%
+  group_by(IntronName) %>%
+  summarise(IntronSum=sum(Readcount))
+
+ggplot(IntronCountSums, aes(x=IntronSum)) +
+  geom_histogram() +
+  scale_x_continuous(trans="log10")
+
+IntronsToGetSlope <- IntronCountSums %>% filter(IntronSum>100) %>% pull(IntronName)
+
+Counts %>%
+  filter(IntronName %in% IntronsToGetSlope) %>%
+  group_by(IntronName) %>%
+  mutate(IntronSum=sum(Readcount)) %>%
+  ungroup() %>%
+  mutate(NormCount=Readcount/IntronSum) %>%
+  group_by(Window) %>%
+  summarize(Med=mean(NormCount)) %>%
+  ggplot(aes(x=Window, y=Med)) +
+    geom_line() +
+  xlab("Relative intronic position") +
+  ylab("Normalized Read Coverage") +
+  theme_bw()
+ggsave("../output/Plot.chRNA.LongIntronicMetaprofile.pdf", height=2.5, width=2.5)
+
+
+
+CoverageFits.df <- Counts %>%
+  filter(IntronName %in% IntronsToGetSlope) %>%
+  mutate(SampleSum=sum(Readcount)) %>%
+  mutate(NormCount=Readcount/SampleSum) %>%
+  group_by(IntronName) %>%
+  mutate(IntronSum=sum(NormCount)) %>%
+  ungroup() %>%
+  mutate(NormCount2=NormCount/IntronSum) %>%
+  group_by(IntronName) %>%
+  do(CoverageFit = rlm(NormCount2 ~ Window, data = ., maxit=40))
+
+CoverageFits.df %>%
+  tidy(CoverageFit)
+
+CoverageFits.df %>%
+  filter(term=="Window") %>%
+  ggplot(aes(x=estimate)) +
+  geom_histogram() +
+  theme_bw()
+
+CoverageFits.df %>%
+  filter(term=="Window") %>%
+  filter(estimate<0) %>% dim()
+
+RatesMerged <- CoverageFits.df %>%
+  filter(term=="Window") %>%
+  separate(IntronName, into=c("gene", "IntChr", "IntStart", "IntStop", "IntStrand"), sep="_", convert = T) %>%
+  mutate(IntronLen=IntStop-IntStart) %>% 
+  mutate(gene=str_remove(gene, pattern = "\\..+$")) %>%
+  left_join(VelosoTxnRates, by="gene")
+
+ggplot(RatesMerged, aes(x=rate, y=estimate/IntronLen)) +
+  geom_hex(bins=100)
+cor.test(RatesMerged$rate, RatesMerged$estimate, method = "spearman")
+
+```
+
+Now repeat for another file. compare slopes
+
+
+```{r}
+
+read_plus <- function(flnm) {
+    fread(flnm, col.names = c("chr", "start", "stop", "name", "score", "strand", "Readcount"), header=F) %>% 
+    mutate(filename = flnm)
+}
+
+MultiSampleCounts <- 
+    list.files(path = "../code/snakemake_workflow/LongIntronWindowCounts", full.names=T) %>% 
+    map_df(~read_plus(.)) %>%
+  mutate(sample=gsub("../code/snakemake_workflow/LongIntronWindowCounts/(.+?).bed.gz", "\\1", filename)) %>%
+  separate(name, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand", "Window"),convert=T, sep="_") %>%
+  unite(IntronName, gene, IntChr, IntStart, IntStop, IntStrand) %>%
+  dplyr::select(chr, start, stop, Window, IntronName, Readcount, sample)
+
+MultiSampleCounts <- MultiSampleCounts %>% filter(!sample=="18858_cheRNA_L")
+
+MultiSampleCounts %>%
+  separate(IntronName, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand"),convert=T, sep="_", remove=F) %>%
+  group_by(sample) %>%
+  mutate(SampleSum=sum(Readcount)) %>%
+  ungroup() %>%
+  mutate(NormCount=Readcount/SampleSum) %>%
+  group_by(IntronName) %>%
+  mutate(IntronSum=sum(NormCount)) %>%
+  ungroup() %>%
+  mutate(NormCount2=NormCount/IntronSum) %>%
+  filter(IntStop=="96341382") %>%
+  ggplot(aes(x=Window, y=NormCount2, color=sample)) +
+  geom_line() +
+  theme_bw()
+
+CoverageFits.df <- MultiSampleCounts %>%
+  filter(!Window %in% c(1,100)) %>%
+  filter(IntronName %in% IntronsToGetSlope) %>%
+  group_by(sample) %>%
+  mutate(SampleSum=sum(Readcount)) %>%
+  ungroup() %>%
+  mutate(NormCount=Readcount/SampleSum) %>%
+  group_by(IntronName) %>%
+  mutate(IntronSum=sum(NormCount)) %>%
+  ungroup() %>%
+  mutate(NormCount2=NormCount/IntronSum) %>%
+  group_by(IntronName, sample) %>%
+  do(CoverageFit = rlm(NormCount2 ~ Window, data = .)) %>%
+  tidy(CoverageFit)
+
+
+CoverageFits.df %>%
+  filter(term=="Window") %>%
+  dplyr::select(sample, IntronName, estimate) %>%
+  spread(key="sample", value="estimate") %>%
+  ggplot(aes(x=`19138_cheRNA_1`, y=`19201_cheRNA_1`)) +
+    geom_hline(yintercept=0)+
+    geom_vline(xintercept=0)+
+    xlab("YRI.19138 Elongation rate\n(intron slope)") +
+    ylab("YRI.19201 Elongation rate\n(intron slope)") +
+    geom_hex(bins=100) +
+    scale_fill_viridis(option="A") +
+  theme_bw()
+
+MAML2Int <- CoverageFits.df %>%
+  filter(term=="Window") %>%
+  dplyr::select(sample, IntronName, estimate) %>%
+  separate(IntronName, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand"),convert=T, sep="_") %>%
+  filter(IntStop=="96341382") %>%
+  spread(key="sample", value="estimate")
+
+
+CoverageFits.df %>%
+  filter(term=="Window") %>%
+  dplyr::select(sample, IntronName, estimate) %>%
+  spread(key="sample", value="estimate") %>%
+  ggplot(aes(x=`19138_cheRNA_1`, y=`19201_cheRNA_1`)) +
+    geom_hline(yintercept=0)+
+    geom_vline(xintercept=0)+
+    xlab("YRI.19138 Elongation rate\n(intron slope)") +
+    ylab("YRI.19201 Elongation rate\n(intron slope)") +
+    geom_hex(bins=100) +
+    scale_fill_viridis(option="A") +
+    geom_point(data=MAML2Int, color="red", aes(x=`19138_cheRNA_1`, y=`19201_cheRNA_1`)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45))
+ggsave("../output/Plot.chRNA.RateRepScatter.pdf", height=2.7, width=3.5)
+
+
+
+
+CoverageFits.df %>%
+  filter(term=="Window" & sample=="19138_cheRNA_1") %>%
+  filter(estimate<=0) %>% dim()
+CoverageFits.df %>%
+  filter(term=="Window" & sample=="19138_cheRNA_1") %>%
+  dim()
+
+ggsave("../output/Plot.chRNA.RateRepScatter.pdf", height=2.5, width=3.5)
+
+```
+

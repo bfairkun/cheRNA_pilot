@@ -1,0 +1,111 @@
+---
+title: "20200305_IntronSlopeCorrelation"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(gtools)
+library(broom)
+library(MASS)
+library(magrittr)
+library(knitr)
+
+sample_n_of <- function(data, size, ...) {
+  dots <- quos(...)
+  
+  group_ids <- data %>% 
+    group_by(!!! dots) %>% 
+    group_indices()
+  
+  sampled_groups <- sample(unique(group_ids), size)
+  
+  data %>% 
+    filter(group_ids %in% sampled_groups)
+}
+
+```
+
+```{r}
+Counts <- fread("../code/snakemake_workflow/LongIntronWindowCounts/19201_cheRNA_1.bed.gz", col.names = c("chr", "start", "stop", "name", "score", "strand", "Readcount"), header=F) %>%
+  separate(name, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand", "Window"),convert=T, sep = "_") %>%
+  unite(IntronName, gene, IntChr, IntStart, IntStop, IntStrand) %>%
+  dplyr::select(chr, start, stop, Window, IntronName, Readcount) 
+
+IntronCountSums <- Counts %>%
+  group_by(IntronName) %>%
+  summarise(IntronSum=sum(Readcount))
+
+ggplot(IntronCountSums, aes(x=IntronSum)) +
+  geom_histogram() +
+  scale_x_continuous(trans="log10")
+```
+
+Calculate slope for one sample for subset of introns to test code
+
+```{r}
+IntronsToGetSlope <- IntronCountSums %>% filter(IntronSum>100) %>% pull(IntronName)
+
+ModelSlope <- function(df) {
+  rlm(Readcount ~ RelativeIntronPosInBp, data = df, maxit=100)
+}
+ModelSlope.possibly <- possibly(ModelSlope, NA)
+
+
+CoverageFits.df <- Counts %>%
+  filter(IntronName %in% IntronsToGetSlope) %>%
+  mutate(RelativeIntronPosInBp = Window*200) %>%
+  sample_n_of(9, IntronName) %>%
+  group_by(IntronName) %>%
+  nest() %>%
+  mutate(CoverageFit = map(data, ModelSlope.possibly),
+         tidier = map(CoverageFit, tidy)) %>%
+  unnest(tidier)
+
+
+
+```
+
+Do for all samples for all introns that pass filter
+
+```{r}
+
+
+read_plus <- function(flnm) {
+    fread(flnm, col.names = c("chr", "start", "stop", "name", "score", "strand", "Readcount"), header=F) %>% 
+    mutate(filename = flnm)
+}
+
+MultiSampleCounts <- 
+    list.files(path = "../code/snakemake_workflow/LongIntronWindowCounts", full.names=T) %>% 
+    map_df(~read_plus(.)) %>%
+  mutate(sample=gsub("../code/snakemake_workflow/LongIntronWindowCounts/(.+?).bed.gz", "\\1", filename)) %>%
+  separate(name, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand", "Window"),convert=T, sep="_") %>%
+  unite(IntronName, gene, IntChr, IntStart, IntStop, IntStrand) %>%
+  dplyr::select(chr, start, stop, Window, IntronName, Readcount, sample)
+
+MultiSampleCounts %>% pull(sample) %>% unique()
+
+MultiSampleCounts <- MultiSampleCounts %>% filter(!sample=="18858_cheRNA_L")
+
+#Plot MAML2 intron
+MultiSampleCounts %>%
+  separate(IntronName, into = c("gene", "IntChr", "IntStart", "IntStop", "IntStrand"),convert=T, sep="_", remove=F) %>%
+  group_by(sample) %>%
+  mutate(SampleSum=sum(Readcount)) %>%
+  ungroup() %>%
+  mutate(NormCount=Readcount/SampleSum) %>%
+  group_by(IntronName) %>%
+  mutate(IntronSum=sum(NormCount)) %>%
+  ungroup() %>%
+  mutate(NormCount2=NormCount/IntronSum) %>%
+  filter(IntStop=="96341382") %>%
+  ggplot(aes(x=Window, y=NormCount2, color=sample)) +
+  geom_line() +
+  theme_bw()
+
+```

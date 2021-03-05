@@ -20,6 +20,21 @@
   "STAR_alignment_SecondPass":
   {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10},
 
+  "STAR_alignment_FirstPassQuick":
+  {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10},
+
+  "STAR_alignment_SecondPass_test":
+  {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10},
+
+  "CountReadsInLongIntronWindows":
+  {"partition" : "broadwl", "mem": 12000},
+
+  "QualimapRnaseq":
+  {"partition" : "broadwl", "mem": 24000},
+
+  "QualimapRnaseqQuick":
+  {"partition" : "broadwl", "mem": 10000},
+
   "STAR_alignment_SecondPass_PE":
   {"partition" : "broadwl", "mem": 42000, "tasks-per-node" : 10}
 }

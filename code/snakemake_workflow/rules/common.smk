@@ -14,6 +14,11 @@ SRA_fastq_for_download = expand("SRA_Fastq/{SRA_Accension}.fastq.gz", SRA_Accens
 SampleList = set(FastQList['Sample'])
 SampleList_PE = set(FastQList[FastQList.R2.notnull()]['Sample'])
 
+Reps1 =[sample for sample in FastQList['Sample'] if "_cheRNA_1" in str(sample) ] 
+Reps2 = [sample for sample in FastQList['Sample'] if "_cheRNA_2" in str(sample) ]
+YisSamples = Reps1 + Reps2
+
+
 # # How to access values in samples.tsv
 # print(samples)
 # print( expand("Hello {sample}", sample=samples.index) )

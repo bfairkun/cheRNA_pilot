@@ -13,6 +13,13 @@ def GetClippingParameterForLexogenDatasetMatchedLength(wildcards):
         return("|fastx_trimmer -l 46")
 
 
+def GetQualimapLibtype(wildcards):
+    if wildcards.sample.startswith("NA"):
+        return("non-strand-specific")
+    elif wildcards.sample.endswith("_L"):
+        return("strand-specific-forward")
+    else:
+        return("strand-specific-reverse")
 
 rule STAR_make_index_human:
     input:
@@ -131,6 +138,26 @@ rule STAR_alignment_SecondPass:
         """
         ulimit -v 31538428657
         STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn <(zcat {input.R1} {params.clipParam}) --outSAMtype BAM SortedByCoordinate --outWigType wiggle --outFileNamePrefix Alignments/SecondPass/{wildcards.sample}/ &> {log}
+        samtools index {output.bam}
+        """
+
+rule STAR_alignment_SecondPass_test:
+    input:
+        index = "Alignments/FirstPass_sjdb_index/chrLength.txt",
+        R1 = "Sample_Fastq/{sample}.fastq.gz"
+    log:
+        "logs/STAR_SecondPassTest/{sample}.log"
+    threads: 8
+    output:
+        SJout = "Alignments/SecondPassTest/{sample}/SJ.out.tab",
+        bam = "Alignments/SecondPassTest/{sample}/Aligned.sortedByCoord.out.bam",
+        bai =  "Alignments/SecondPassTest/{sample}/Aligned.sortedByCoord.out.bam.bai"
+    params:
+        clipParam = GetClippingParameterForLexogenDatasetMatchedLength
+    shell:
+        """
+        ulimit -v 31538428657
+        STAR --runThreadN {threads} --genomeDir Alignments/FirstPass_sjdb_index --readFilesIn <(zcat {input.R1} {params.clipParam}) --readMapNumber 100000 --outSAMtype BAM SortedByCoordinate --outReadsUnmapped Fastx --outWigType wiggle --outFileNamePrefix Alignments/SecondPassTest/{wildcards.sample}/ &> {log}
         samtools index {output.bam}
         """
 
@@ -321,6 +348,33 @@ rule CountsPerBam:
     shell:
         """
         bash scripts/CountReadsPerBam.sh {output} {input} 2> {log}
+        """
+
+rule QualimapRnaseq:
+    input:
+        gtf=config["Human_ref"]["genome_gtf"],
+        bam="Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam"
+    output:
+        "qualimap/{sample}/rnaseq_qc_results.txt"
+    log:
+        "logs/QualimapRnaseq/{sample}.log"
+    params:
+        libtype = GetQualimapLibtype
+    shell:
+        """
+        qualimap rnaseq -bam {input.bam} -gtf {input.gtf} -p {params.libtype} --java-mem-size=8G -outdir qualimap/{wildcards.sample}/ &> {log}
+        """
+
+rule MultiQC:
+    input:
+        expand("qualimap/{sample}/rnaseq_qc_results.txt", sample=SampleList),
+        expand("Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam", sample=SampleList),
+    log: "logs/Multiqc.log"
+    output:
+        "Multiqc/multiqc_report.html"
+    shell:
+        """
+        multiqc -f -o Multiqc/ qualimap/ Alignments/SecondPass/ &> {log}
         """
 
 # rule TopHatJuncBedFilesToBigBed:

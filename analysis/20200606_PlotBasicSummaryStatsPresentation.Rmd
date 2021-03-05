@@ -1,0 +1,167 @@
+---
+title: "20190805_PlotIntronPositions"
+author: "Ben Fair"
+date: "8/15/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+library(tidyverse)
+library(scales)
+```
+
+
+```{r}
+
+GencodeIntrons <- read.table("../data/GencodeHg38_all_introns.corrected.bed.gz", sep='\t', col.names = c('chrom', 'start', 'stop', 'name', 'score', 'strand', 'gene', 'intronNumber', 'transcriptType'))
+table(GencodeIntrons$transcriptType)
+
+
+NMD.Transcript.Introns <- GencodeIntrons %>%
+  mutate(Intron=paste(chrom, start,stop,strand, sep=".")) %>%
+  filter(transcriptType=="nonsense_mediated_decay") %>%
+  distinct(Intron) %>% pull(Intron)
+Non.NMD.Transcript.Introns <- GencodeIntrons %>%
+  mutate(Intron=paste(chrom, start,stop,strand, sep=".")) %>%
+  filter(transcriptType!="nonsense_mediated_decay") %>%
+  distinct(Intron) %>% pull(Intron)
+NMD.Specific.Introns <- setdiff(NMD.Transcript.Introns, Non.NMD.Transcript.Introns)
+
+
+
+files <- list.files(path="../output/SJoutAnnotatedAndIntersected", pattern="*.tab.gz", full.names=TRUE, recursive=FALSE)
+SampleName<-gsub("../output/SJoutAnnotatedAndIntersected/(.+).tab.gz", "\\1", files, perl=T)
+SampleName
+
+#Create some translations for nicer labels
+SampleName
+
+
+
+MergedData <- data.frame()
+for (i in seq_along(files)){
+    CurrentDataset <- read.table(files[i], sep='\t', col.names=c("chr", "start", "stop", "name", "score", "strand", "ASType", "geneChr", "geneStart", "geneStop", "gene", "geneScore", "geneStrand", "Overlap")) %>%
+      select(ASType, start, stop, geneChr, geneStart, geneStop, score, strand) %>%
+      mutate(samplename=SampleName[i]) %>%
+      filter(geneChr != ".") %>%
+      mutate(Rel5SplicePos = case_when(
+        strand=="+" ~ ((start-geneStart)/(geneStop-geneStart)),
+        strand=="-" ~ ((geneStop-stop)/(geneStop-geneStart))
+      )) %>%
+      mutate(Rel3SplicePos = case_when(
+        strand=="+" ~ ((stop-geneStart)/(geneStop-geneStart)),
+        strand=="-" ~ ((geneStop-start)/(geneStop-geneStart))
+      )) %>%
+      filter(Rel5SplicePos<=1 & Rel5SplicePos>=0) %>%
+      filter(Rel3SplicePos<=1 & Rel3SplicePos>=0)
+    MergedData<-rbind(MergedData,CurrentDataset)
+}
+
+SamplesToPlot <- c("NA19201_60min", "NA18913_30min","NA19201_argonne", "19201_cheRNA_1")
+SampleRelabels <- setNames(c("4sU 60min\n(Li et al)", "4sU 30min\n(Li et al)", "polyA-RNA-seq\n(Pickrell et al)", "chRNA-seq"), SamplesToPlot)
+SampleColors <- setNames(hue_pal()(4), SamplesToPlot)
+
+# SamplesToPlot <- c("CPE_1", "SNE_1", "18862_cheRNA_1","NA18862_argonne", "19201_cheRNA_1", "18913_cheRNA_2")
+
+# SamplesToPlot <- c("Sultan_polyA_Total", "Sultan_rRNADeplete_Total", "Sultan_rRNADepelete_nuclear", "Sultan_rRNADepelete_cytoplasmic")
+
+
+MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  group_by(samplename, ASType) %>%
+  summarise(a_sum=sum(score)) %>%
+  group_by(samplename) %>%
+  mutate(FractionSpliceType = a_sum/sum(a_sum)*100) %>%
+  filter(ASType!="AnnotatedSpliceSite") %>%
+  ggplot(aes(x = samplename, y = FractionSpliceType, fill = ASType)) +
+  geom_col() +
+  ylab("Percent unannotated splicing") +
+    scale_x_discrete(labels=SampleRelabels) +
+  scale_y_continuous(expand=c(0,0)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust=0.5),
+        legend.position="bottom") +
+  theme(axis.title.x=element_blank())
+ggsave("../output/Plot.AssayComparison.UnannotatedSplicing.pdf", height=4, width=4)
+
+#Same plot but plot percent NMD specific splicing
+MergedData %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  mutate(Intron=paste(geneChr, start,stop,strand, sep=".")) %>%
+  mutate(NMD.status = case_when(Intron %in% NMD.Specific.Introns ~ "NMD.Specific.Intron",
+                                !Intron %in% NMD.Specific.Introns ~ "Not.NMD.Specific.Intron"
+                                )) %>%
+  group_by(samplename, NMD.status) %>%
+  summarise(a_sum=sum(score)) %>%
+  group_by(samplename) %>%
+  mutate(FractionSpliceType = a_sum/sum(a_sum)*100) %>%
+  filter(NMD.status=="NMD.Specific.Intron") %>%
+  ggplot(aes(x = samplename, y = FractionSpliceType, fill=samplename)) +
+  geom_col() +
+  ylab("Percent NMD.specific\njunction reads") +
+  scale_fill_manual(values=SampleColors) +
+  scale_x_discrete(labels=SampleRelabels) +
+  scale_y_continuous(expand=c(0,0)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust=0.5),
+        legend.position="none") +
+  theme(axis.title.x=element_blank())
+ggsave("../output/Plot.AssayComparison.NMD.pdf", height=4, width=4)
+
+
+
+#Same plot but count fraction of spliced reads as fraction of total mapped
+TotalReadCounts <- read.table("../output/CountsPerBam.txt", header=T, sep='\t') %>%
+  mutate(samplename = gsub(".+SecondPass/(.+?)/Aligned.sortedByCoord.+", "\\1", Filename, perl=T)) %>%
+  select(samplename, ReadCount)
+
+MergedData %>%
+  group_by(samplename, ASType) %>%
+  filter(samplename %in% SamplesToPlot) %>%
+  summarise(a_sum=sum(score)) %>%
+  group_by(samplename) %>%
+  left_join(TotalReadCounts) %>%
+  mutate(FractionSpliceType = a_sum/ReadCount*100) %>%
+  ggplot(aes(x = samplename, y = FractionSpliceType, fill=samplename)) +
+  geom_col() +
+  ylab("Percent spliced reads") +
+  scale_fill_manual(values=SampleColors) +
+  scale_x_discrete(labels=SampleRelabels) +
+  scale_y_continuous(expand=c(0,0)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust=0.5),
+        legend.position="none") +
+  theme(axis.title.x=element_blank())
+ggsave("../output/Plot.AssayComparison.TotalJunctions.pdf", height=4, width=4)
+
+
+
+
+
+QualimapResults <- read.delim("../data/qualimap_genomic_origin.tsv") %>%
+  mutate(Sample=gsub(pattern = "Alignments/SecondPass/(.+?)/Aligned.sortedByCoord.out.bam", replacement = "\\1", Category)) %>%
+  filter(Sample %in% SamplesToPlot)
+QualimapResults %>% gather(key="GenomicRegion", value="ReadCount", Exonic, Intronic, Intergenic) %>%
+ggplot(aes(fill=GenomicRegion, x=Sample, y=ReadCount)) +
+  geom_bar(position="fill", stat="identity") +
+  ylab("Fraction reads") +
+  scale_x_discrete(labels=SampleRelabels) +
+  scale_y_continuous(expand=c(0,0)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust=0.5),
+        legend.position="bottom") +
+  theme(axis.title.x=element_blank())
+ggsave("../output/Plot.AssayComparison.Qualimap.pdf", height=4, width=4)
+
+
+```
+
+Ok, so nuclear (and chromatin associated) fractions have more unannotated splicing by a factor of about 1.5X to 2X, and of those unannotated splice sites seem very slightly biased towards the 5' end of genes.
+
+
+
+

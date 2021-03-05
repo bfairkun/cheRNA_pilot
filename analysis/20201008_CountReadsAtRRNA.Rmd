@@ -1,0 +1,128 @@
+---
+title: "ReadsTorRNA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(edgeR)
+
+CountsPerChrom <- read.delim("../output/QuickAnalyses/IdxStats.tab", sep=" ", col.names = c("chrom", "len", "counts", "fn"), stringsAsFactors = F) %>%
+  mutate(Sample=gsub(pattern = "QuickAnalyses/idxstats/(.+?).tab", replacement = "\\1", fn)) %>%
+  dplyr::select(-fn)
+
+CountsPerChrom %>%
+  group_by(chrom) %>%
+  summarise(Sum=sum(counts)) %>%
+  filter(Sum>1000) %>%
+  arrange(desc(Sum)) %>%
+  ggplot(aes(x=chrom, y=Sum)) +
+  geom_col() +
+  scale_y_continuous(trans="log10") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90))
+
+ProblematicContigs <- c("KI270733.1", "GL000220.1")
+
+CountsPerChrom %>%
+  mutate(chrom.type = case_when(
+    startsWith(chrom, "chr") ~ "Chromsomsal",
+    chrom %in% ProblematicContigs ~ chrom,
+    TRUE ~ "Other"
+  )) %>%
+  group_by(Sample, chrom.type) %>%
+  summarise(ReadCount=sum(counts)) %>%
+  ggplot(aes(fill=chrom.type, x=Sample, y=ReadCount)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5))
+
+
+```
+
+Read in gene list, and count table
+
+```{r}
+Genes <- read_delim("../data/ENSEMBL_geneList.gz", delim = "\t") %>%
+  dplyr::select(gene=`Gene stable ID`, gene.type=`Gene type`)
+
+InterestingCategories = c("protein_coding", "lncRNA", "rRNA", "rRNA_pseudogene", "misc_RNA")
+
+
+Genes$gene.type %>% table()
+
+CountTable <- read_delim("../output/QuickAnalyses/FeatureCounts.txt.gz", delim = '\t', comment="#")
+head(CountTable)
+
+CountTable$Chr %>% sub(";.*", replacement = "", .) %>% table()
+
+CountTable %>%
+  dplyr::select(gene=Geneid, Chr) %>%
+  mutate(Chr=sub(";.*", replacement = "", Chr)) %>%
+  mutate(gene=str_remove(gene, "\\.\\d+$")) %>%
+  inner_join(Genes, by="gene") %>%
+  filter(Chr %in% ProblematicContigs)
+
+
+
+CountTable.DGE <- CountTable %>% dplyr::select(-Strand, -Length, -End, -Start, -Chr) %>%
+  column_to_rownames("Geneid") %>%
+  DGEList()
+
+median.CPM.unfiltered <- CountTable.DGE %>% cpm(log=T, prior.count = 0.001) %>% apply(1,median)
+hist(median.CPM.unfiltered)
+
+# CPM.unfiltered %>% head()
+
+CountTable.DGE$counts %>%
+  as.data.frame() %>%
+  rownames_to_column("gene") %>%
+  gather(key="sample", value="counts", -gene) %>%
+  mutate(gene=str_remove(gene, "\\.\\d+$")) %>%
+  inner_join(Genes, by="gene") %>%
+  mutate(Simplified.type=if_else(gene.type %in% InterestingCategories, gene.type, "Other")) %>%
+  dplyr::select(-gene.type) %>%
+  group_by(sample, Simplified.type) %>%
+  summarise(ReadCount=sum(counts)) %>%
+  ggplot(aes(fill=Simplified.type, x=sample, y=ReadCount)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5))
+
+CountTable.DGE %>%
+  cpm(log=T, prior.count = 0.001) %>%
+  as.data.frame() %>%
+  rownames_to_column("gene") %>%
+  dplyr::select(gene, `18858_nucRNA_L`, SNE_1) %>%
+  mutate(mean.exp = (`18858_nucRNA_L` + `SNE_1`)/2) %>% 
+  top_n(10000, mean.exp) %>% 
+  mutate(gene=str_remove(gene, "\\.\\d+$")) %>%
+  inner_join(Genes, by="gene") %>%
+  mutate(Simplified.type=if_else(gene.type %in% InterestingCategories, gene.type, "Other")) %>%
+  ggplot(aes(x=`18858_nucRNA_L`, y=SNE_1, color=Simplified.type)) +
+  geom_point(alpha=0.2) +
+  geom_abline() +
+  theme_classic()
+
+CountTable.DGE %>%
+  cpm(log=T, prior.count = 0.001) %>%
+  as.data.frame() %>%
+  rownames_to_column("gene") %>%
+  dplyr::select(gene, `18858_nucRNA_L`, `19099_nucRNA_L`) %>% 
+   mutate(mean.exp = (`18858_nucRNA_L` + `19099_nucRNA_L`)/2) %>% 
+  top_n(10000, mean.exp) %>% 
+  mutate(gene=str_remove(gene, "\\.\\d+$")) %>%
+  inner_join(Genes, by="gene") %>%
+  mutate(Simplified.type=if_else(gene.type %in% InterestingCategories, gene.type, "Other")) %>%
+  ggplot(aes(x=`18858_nucRNA_L`, y=`19099_nucRNA_L`, color=Simplified.type)) +
+  geom_point(alpha=0.2) +
+  geom_abline() +
+  theme_classic()
+
+```
+
