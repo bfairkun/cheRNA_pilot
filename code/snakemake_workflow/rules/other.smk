@@ -126,3 +126,23 @@ rule DownloadVeloso_Txn_Rates:
         """
         wget -O {output} https://genome.cshlp.org/content/suppl/2014/04/16/gr.171405.113.DC1/Supplemental_Table1.xlsx
         """
+
+rule featureCounts:
+    input:
+        bam = expand("Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam", sample=YisSamples),
+        bai =  expand("Alignments/SecondPass/{sample}/Aligned.sortedByCoord.out.bam.bai", sample=YisSamples),
+        gtf=config["Human_ref"]["genome_gtf"]
+    output:
+        "YisSamples/featureCounts.txt"
+    shell:
+        """
+        featureCounts --primary -s 2 -a {input.gtf} -o {output} {input.bam}
+        """
+
+rule moveFeatureCounts:
+    input:
+        "YisSamples/featureCounts.txt"
+    output:
+        "../../output/GeneCounts.txt.gz"
+    shell:
+        "cat {input} | gzip - > {output}"

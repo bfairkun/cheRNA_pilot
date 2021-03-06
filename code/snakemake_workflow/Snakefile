@@ -38,7 +38,8 @@ rule all:
         "../../output/QuickAnalyses/IdxStats.tab",
         "../../output/QuickAnalyses/FeatureCounts.txt.gz",
         expand("QuickAnalyses/Bigwigs/{sample}.bw", sample=SampleList),
-        expand("../../output/LongIntronWindowCounts/{sample}.bed.gz", sample=YisSamples)
+        expand("../../output/LongIntronWindowCounts/{sample}.bed.gz", sample=YisSamples),
+        "../../output/GeneCounts.txt.gz"
 include: "rules/other.smk"
 include: "rules/DownloadAndMergeFastq.smk"
 include: "rules/Align.smk"
