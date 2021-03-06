@@ -81,7 +81,7 @@ rule MoveLongIntronCountsToOutput:
     input:
         bed = "LongIntronWindowCounts/{sample}.bed.gz"
     output:
-        bed = "../output/LongIntronWindowCounts/{sample}.bed.gz"
+        bed = "../../output/LongIntronWindowCounts/{sample}.bed.gz"
     log:
         "logs/MoveLongIntronCountsToOutput/{sample}.log"
     shell:
