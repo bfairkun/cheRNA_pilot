@@ -146,3 +146,8 @@ rule moveFeatureCounts:
         "../../output/GeneCounts.txt.gz"
     shell:
         "cat {input} | gzip - > {output}"
+
+# rule PlotMAML2:
+#     input:
+#     output:
+#     shell:

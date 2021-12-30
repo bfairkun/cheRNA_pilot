@@ -5,6 +5,9 @@ rule STAR_alignment_FirstPassQuick:
     log:
         "logs/STAR_FirstPass/{sample}.log"
     threads: 8
+    resources:
+        mem = 42000,
+        tasks_per_node = 9
     params:
         index = "/project2/yangili1/bjf79/ChromatinSplicingQTLs/code/ReferenceGenome/STARIndex/",
         clippingParam = GetClippingParameterForLexogenDataset
@@ -27,8 +30,13 @@ rule QualimapRnaseqQuick:
         "logs/QualimapQucikRnaseq/{sample}.log"
     params:
         libtype = GetQualimapLibtype
+    conda:
+        "../envs/qualimap.yaml"
+    resources:
+        mem = 10000
     shell:
         """
+        unset DISPLAY
         qualimap rnaseq -bam {input.bam} -gtf {input.gtf} -p {params.libtype} --java-mem-size=8G -outdir qualimap_quick/{wildcards.sample}/ &> {log}
         """
 
@@ -95,6 +103,8 @@ rule QuickBigiwgs:
         fai = "/project2/yangili1/bjf79/ChromatinSplicingQTLs/code/ReferenceGenome/Fasta/GRCh38.primary_assembly.genome.fa.fai"
     output:
         "QuickAnalyses/Bigwigs/{sample}.bw"
+    resources:
+        mem = 24000
     shell:
         """
         scripts/BamToBigwig.sh {input.fai} {input.bam} {output}
